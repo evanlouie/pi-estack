@@ -3,7 +3,8 @@
   "type": "module",
   "scripts": {
     "lint": "oxlint --type-aware --type-check",
-    "lint:fix": "oxlint --type-aware --type-check --fix"
+    "lint:fix": "oxlint --type-aware --type-check --fix",
+    "test": "bun test"
   },
   "keywords": [
     "pi-package"
@@ -27,7 +28,7 @@
     "ts-pattern": "^5.9.0"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
+    "@earendil-works/pi-coding-agent": ">=0.74.0"
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^0.74.0",
