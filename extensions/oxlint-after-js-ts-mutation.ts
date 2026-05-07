@@ -11,6 +11,8 @@ import {
   withFileMutationQueue,
 } from "@earendil-works/pi-coding-agent";
 import { ResultAsync } from "neverthrow";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { match, P } from "ts-pattern";
 import {
   appendMessage,
@@ -18,16 +20,18 @@ import {
   inputPath,
   missingBinaryReason,
   notify,
+  projectAndPackageBinSearchDirectories,
   resolveToCwd,
   runCommand,
   summarizeOutput,
   type ToolResultPatch,
 } from "./lib/command-runner.js";
 
-const GO_FILE_RE = /\.go$/i;
-const GOIMPORTS_COMMAND = "goimports";
-const GOIMPORTS_TIMEOUT_MS = 30_000;
-const OUTPUT_LIMIT = 2_000;
+const EXTENSION_DIRECTORY = dirname(fileURLToPath(import.meta.url));
+const JS_TS_FILE_RE = /\.(?:[cm]?js|jsx|[cm]?ts|tsx)$/i;
+const OXLINT_COMMAND = "oxlint";
+const OXLINT_TIMEOUT_MS = 30_000;
+const OUTPUT_LIMIT = 4_000;
 
 type ToolResultContent = ToolResultEvent["content"];
 
@@ -38,48 +42,48 @@ function targetPath(event: ToolResultEvent): string | undefined {
     .otherwise(() => undefined);
 }
 
-function isSuccessfulGoMutation(event: ToolResultEvent, path: string | undefined): path is string {
-  return !event.isError && typeof path === "string" && GO_FILE_RE.test(path);
+function isSuccessfulJsTsMutation(event: ToolResultEvent, path: string | undefined): path is string {
+  return !event.isError && typeof path === "string" && JS_TS_FILE_RE.test(path);
 }
 
 function missingBinaryMessage(): string {
   return [
-    `${GOIMPORTS_COMMAND} is not installed or is not on PATH.`,
-    "Agent action: run `go install golang.org/x/tools/cmd/goimports@latest`, ensure `$(go env GOPATH)/bin` is on the running pi/agent process PATH, then retry the Go file edit.",
+    `${OXLINT_COMMAND} is not installed or is not on PATH.`,
+    "Agent action: install oxlint (for example `bun add -D oxlint` in JavaScript/TypeScript projects) or ensure the running pi/agent process PATH can find it, then retry the JavaScript/TypeScript file edit.",
   ].join("\n");
 }
 
-function goimportsFailureReason(result: ExecResult): string {
+function oxlintFailureReason(result: ExecResult): string {
   return match(result)
     .with({ killed: true }, () => "process was killed or timed out")
     .with({ code: 127 }, () => missingBinaryMessage())
     .otherwise(({ stderr, stdout, code }) =>
-      summarizeOutput(GOIMPORTS_COMMAND, stderr || stdout || `exit code ${code}`, OUTPUT_LIMIT),
+      summarizeOutput(OXLINT_COMMAND, stderr || stdout || `exit code ${code}`, OUTPUT_LIMIT),
     );
 }
 
-function goimportsFailureNotification(path: string, reason: string): string {
+function oxlintFailureNotification(path: string, reason: string): string {
   return match(reason)
     .with(
       missingBinaryMessage(),
       () =>
-        `${GOIMPORTS_COMMAND} is not installed or is not on PATH; guidance was added to the tool result.`,
+        `${OXLINT_COMMAND} is not installed or is not on PATH; guidance was added to the tool result.`,
     )
-    .otherwise(() => `${GOIMPORTS_COMMAND} failed for ${path}: ${reason}`);
+    .otherwise(() => `${OXLINT_COMMAND} failed for ${path}: ${reason}`);
 }
 
-function failedGoimportsResponse(
+function failedOxlintResponse(
   path: string,
   content: ToolResultContent,
   ctx: ExtensionContext,
   reason: string,
 ): ToolResultPatch {
-  const message = `${GOIMPORTS_COMMAND} failed for ${path}: ${reason}`;
-  notify(ctx, goimportsFailureNotification(path, reason), "warning");
+  const message = `${OXLINT_COMMAND} failed for ${path}: ${reason}`;
+  notify(ctx, oxlintFailureNotification(path, reason), "warning");
   return appendMessage(content, message);
 }
 
-function goimportsResponse(
+function oxlintResponse(
   path: string,
   content: ToolResultContent,
   ctx: ExtensionContext,
@@ -87,41 +91,39 @@ function goimportsResponse(
 ): ToolResultPatch {
   return match(result)
     .with({ code: 0, killed: false }, () => {
-      const message = `Ran ${GOIMPORTS_COMMAND} -w on ${path}`;
+      const message = `Ran ${OXLINT_COMMAND} on ${path}`;
       notify(ctx, message, "info");
-      return appendMessage(
-        content,
-        `${message}; original tool diff may not include ${GOIMPORTS_COMMAND} changes.`,
-      );
+      return appendMessage(content, message);
     })
     .otherwise((failedResult) =>
-      failedGoimportsResponse(path, content, ctx, goimportsFailureReason(failedResult)),
+      failedOxlintResponse(path, content, ctx, oxlintFailureReason(failedResult)),
     );
 }
 
-function goimportsErrorResponse(
+function oxlintErrorResponse(
   path: string,
   content: ToolResultContent,
   ctx: ExtensionContext,
   error: string,
 ): ToolResultPatch {
-  return failedGoimportsResponse(
+  return failedOxlintResponse(
     path,
     content,
     ctx,
-    missingBinaryReason(GOIMPORTS_COMMAND, error, missingBinaryMessage()),
+    missingBinaryReason(OXLINT_COMMAND, error, missingBinaryMessage()),
   );
 }
 
-async function runGoimports(
+async function runOxlint(
   pi: ExtensionAPI,
   absolutePath: string,
   ctx: ExtensionContext,
 ): Promise<ExecResult> {
   return runCommand(pi, ctx, {
-    command: GOIMPORTS_COMMAND,
-    args: ["-w", absolutePath],
-    timeoutMs: GOIMPORTS_TIMEOUT_MS,
+    command: OXLINT_COMMAND,
+    args: [absolutePath],
+    timeoutMs: OXLINT_TIMEOUT_MS,
+    searchDirectories: projectAndPackageBinSearchDirectories(ctx.cwd, EXTENSION_DIRECTORY),
   });
 }
 
@@ -131,14 +133,14 @@ export function createToolResultHandler(
 ): ExtensionHandler<ToolResultEvent, ToolResultPatch> {
   return async (event, ctx) =>
     match({ event, path: targetPath(event) })
-      .with({ path: P.when((path) => isSuccessfulGoMutation(event, path)) }, ({ event, path }) => {
+      .with({ path: P.when((path) => isSuccessfulJsTsMutation(event, path)) }, ({ event, path }) => {
         const absolutePath = resolveToCwd(path, ctx.cwd);
         return ResultAsync.fromPromise(
-          withFileMutationQueue(absolutePath, () => runGoimports(pi, absolutePath, ctx)),
+          withFileMutationQueue(absolutePath, () => runOxlint(pi, absolutePath, ctx)),
           execErrorMessage,
         ).match(
-          (result) => goimportsResponse(path, event.content, ctx, result),
-          (error) => goimportsErrorResponse(path, event.content, ctx, error),
+          (result) => oxlintResponse(path, event.content, ctx, result),
+          (error) => oxlintErrorResponse(path, event.content, ctx, error),
         );
       })
       .otherwise(() => undefined);
