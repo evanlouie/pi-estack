@@ -11,7 +11,7 @@ import { chmod, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { match, P } from "ts-pattern";
-import { createToolResultHandler } from "../extensions/clj-paren-repair.js";
+import { createToolResultHandler } from "../extensions/clj-paren-repair-after-clojure-mutation.js";
 
 type ExecCall = {
   command: string;
@@ -78,7 +78,7 @@ afterEach(() => {
     });
 });
 
-void describe("clj-paren-repair extension", () => {
+void describe("clj-paren-repair after Clojure mutation extension", () => {
   void test("runs repair for a successful Clojure write", async () => {
     const cwd = await withRepairOnPath();
     const { pi, calls } = createMockPi();
