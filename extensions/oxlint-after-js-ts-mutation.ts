@@ -30,6 +30,8 @@ import {
 const EXTENSION_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const JS_TS_FILE_RE = /\.(?:[cm]?js|jsx|[cm]?ts|tsx)$/i;
 const OXLINT_COMMAND = "oxlint";
+/** @internal exported for focused tests. */
+export const OXLINT_TYPE_CHECK_ARGS = ["--type-aware", "--type-check"] as const;
 const OXLINT_TIMEOUT_MS = 30_000;
 const OUTPUT_LIMIT = 4_000;
 
@@ -53,12 +55,30 @@ function missingBinaryMessage(): string {
   ].join("\n");
 }
 
+function missingTypeAwareBackendMessage(): string {
+  return [
+    "oxlint type-aware/type-check mode requires oxlint-tsgolint to be installed alongside the selected oxlint binary.",
+    "Agent action: install oxlint-tsgolint in the target project or ensure pi-estack's package-local oxlint is selected, then retry the JavaScript/TypeScript file edit.",
+  ].join("\n");
+}
+
+function typeAwareBackendReason(output: string): string {
+  return match(output)
+    .when(
+      (value) => /(?:oxlint-tsgolint|tsgolint).*(?:not found|missing|required|requires|install)/i.test(value),
+      () => missingTypeAwareBackendMessage(),
+    )
+    .otherwise((value) => value);
+}
+
 function oxlintFailureReason(result: ExecResult): string {
   return match(result)
     .with({ killed: true }, () => "process was killed or timed out")
     .with({ code: 127 }, () => missingBinaryMessage())
     .otherwise(({ stderr, stdout, code }) =>
-      summarizeOutput(OXLINT_COMMAND, stderr || stdout || `exit code ${code}`, OUTPUT_LIMIT),
+      typeAwareBackendReason(
+        summarizeOutput(OXLINT_COMMAND, stderr || stdout || `exit code ${code}`, OUTPUT_LIMIT),
+      ),
     );
 }
 
@@ -121,7 +141,7 @@ async function runOxlint(
 ): Promise<ExecResult> {
   return runCommand(pi, ctx, {
     command: OXLINT_COMMAND,
-    args: [absolutePath],
+    args: [...OXLINT_TYPE_CHECK_ARGS, absolutePath],
     timeoutMs: OXLINT_TIMEOUT_MS,
     searchDirectories: projectAndPackageBinSearchDirectories(ctx.cwd, EXTENSION_DIRECTORY),
   });

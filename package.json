@@ -34,6 +34,7 @@
   "dependencies": {
     "neverthrow": "^8.2.0",
     "oxlint": "^1.63.0",
+    "oxlint-tsgolint": "^0.22.1",
     "pi-interactive-shell": "^0.13.0",
     "pi-intercom": "^0.6.0",
     "pi-mcp-adapter": "^2.5.4",
@@ -47,8 +48,7 @@
     "@earendil-works/pi-coding-agent": "^0.74.0",
     "@types/node": "^25.6.0",
     "@typescript/native-preview": "^7.0.0-dev.20260507.1",
-    "oxfmt": "^0.48.0",
-    "oxlint-tsgolint": "^0.22.1"
+    "oxfmt": "^0.48.0"
   },
   "bundledDependencies": [
     "pi-mcp-adapter",

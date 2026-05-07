@@ -57,6 +57,25 @@ void describe("command runner helpers", () => {
     );
   });
 
+  void test("preserves oxlint type-check args in Windows cmd wrapper", () => {
+    assert.deepEqual(
+      commandInvocation(
+        "C:\\tools\\oxlint.cmd",
+        ["--type-aware", "--type-check", "C:\\repo\\src\\main.ts"],
+        "win32",
+      ),
+      {
+        command: "cmd.exe",
+        args: [
+          "/d",
+          "/s",
+          "/c",
+          '"C:\\tools\\oxlint.cmd" "--type-aware" "--type-check" "C:\\repo\\src\\main.ts"',
+        ],
+      },
+    );
+  });
+
   void test("keeps non-Windows invocations direct", () => {
     assert.deepEqual(commandInvocation("/usr/local/bin/oxlint", ["src/main.ts"], "darwin"), {
       command: "/usr/local/bin/oxlint",

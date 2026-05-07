@@ -12,7 +12,10 @@ import { tmpdir } from "node:os";
 import { basename, join, normalize } from "node:path";
 import { match, P } from "ts-pattern";
 import { commandPathExtensions } from "../extensions/lib/command-runner.js";
-import { createToolResultHandler } from "../extensions/oxlint-after-js-ts-mutation.js";
+import {
+  createToolResultHandler,
+  OXLINT_TYPE_CHECK_ARGS,
+} from "../extensions/oxlint-after-js-ts-mutation.js";
 
 type ExecCall = {
   command: string;
@@ -27,12 +30,29 @@ type MockPi = {
 
 const originalPath = process.env["PATH"];
 
+function expectedOxlintArgs(path: string): string[] {
+  return [...OXLINT_TYPE_CHECK_ARGS, path];
+}
+
+function compareArgs(left: string[], right: string[]): number {
+  return left.join("\0").localeCompare(right.join("\0"));
+}
+
 function okResult(): ExecResult {
   return { stdout: "", stderr: "", code: 0, killed: false };
 }
 
 function failureResult(): ExecResult {
   return { stdout: "", stderr: "lint error", code: 1, killed: false };
+}
+
+function missingTypeAwareBackendResult(): ExecResult {
+  return {
+    stdout: "",
+    stderr: "oxlint-tsgolint is required for --type-aware, but it is not installed",
+    code: 1,
+    killed: false,
+  };
 }
 
 function createMockPi(result: ExecResult = okResult()): MockPi {
@@ -103,7 +123,7 @@ void describe("oxlint after JavaScript/TypeScript mutation extension", () => {
 
     assert.equal(calls.length, 1);
     assert.equal(calls[0]?.command, join(cwd, "oxlint"));
-    assert.deepEqual(calls[0]?.args, [join(cwd, "src/main.ts")]);
+    assert.deepEqual(calls[0]?.args, expectedOxlintArgs(join(cwd, "src/main.ts")));
     assert.equal(calls[0]?.options?.cwd, cwd);
     assert.equal(calls[0]?.options?.timeout, 30_000);
     assert.deepEqual(result?.content?.at(-1), {
@@ -119,22 +139,35 @@ void describe("oxlint after JavaScript/TypeScript mutation extension", () => {
 
     assert.equal(calls.length, 1);
     assert.equal(calls[0]?.command, join(cwd, "oxlint"));
-    assert.deepEqual(calls[0]?.args, [join(cwd, "src/App.jsx")]);
+    assert.deepEqual(calls[0]?.args, expectedOxlintArgs(join(cwd, "src/App.jsx")));
     assert.deepEqual(result?.content?.at(-1), {
       type: "text",
       text: "\n\nRan oxlint on src/App.jsx",
     });
   });
 
-  void test("runs oxlint for module JavaScript and TypeScript files", async () => {
+  void test("runs oxlint for supported JavaScript and TypeScript file extensions", async () => {
     const cwd = await withOxlintOnPath();
     const { pi, calls } = createMockPi();
-    await createToolResultHandler(pi)(writeEvent("src/main.mjs"), createContext(cwd));
-    await createToolResultHandler(pi)(writeEvent("src/main.cts"), createContext(cwd));
+    const supportedPaths = [
+      "src/main.js",
+      "src/main.cjs",
+      "src/main.mjs",
+      "src/App.jsx",
+      "src/main.ts",
+      "src/main.cts",
+      "src/main.mts",
+      "src/App.tsx",
+    ];
+    await Promise.all(
+      supportedPaths.map((path) =>
+        Promise.resolve(createToolResultHandler(pi)(writeEvent(path), createContext(cwd))),
+      ),
+    );
 
     assert.deepEqual(
-      calls.map((call) => call.args),
-      [[join(cwd, "src/main.mjs")], [join(cwd, "src/main.cts")]],
+      calls.map((call) => call.args).toSorted(compareArgs),
+      supportedPaths.map((path) => expectedOxlintArgs(join(cwd, path))).toSorted(compareArgs),
     );
   });
 
@@ -170,9 +203,25 @@ void describe("oxlint after JavaScript/TypeScript mutation extension", () => {
     const result = await createToolResultHandler(pi)(writeEvent("src/main.ts"), createContext(cwd));
 
     assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0]?.args, expectedOxlintArgs(join(cwd, "src/main.ts")));
     assert.deepEqual(result?.content?.at(-1), {
       type: "text",
       text: "\n\noxlint failed for src/main.ts: lint error",
+    });
+  });
+
+  void test("reports missing type-aware backend guidance", async () => {
+    const cwd = await withOxlintOnPath();
+    const { pi, calls } = createMockPi(missingTypeAwareBackendResult());
+    const result = await createToolResultHandler(pi)(writeEvent("src/main.ts"), createContext(cwd));
+
+    assert.equal(calls.length, 1);
+    assert.deepEqual(result?.content?.at(-1), {
+      type: "text",
+      text: [
+        "\n\noxlint failed for src/main.ts: oxlint type-aware/type-check mode requires oxlint-tsgolint to be installed alongside the selected oxlint binary.",
+        "Agent action: install oxlint-tsgolint in the target project or ensure pi-estack's package-local oxlint is selected, then retry the JavaScript/TypeScript file edit.",
+      ].join("\n"),
     });
   });
 
@@ -189,12 +238,14 @@ void describe("oxlint after JavaScript/TypeScript mutation extension", () => {
         const commandLine = calls[0]?.args.at(-1) ?? "";
         assert.equal(basename(normalizedCommand).toLowerCase(), "cmd.exe");
         assert.match(commandLine, /node_modules.*\.bin.*oxlint/i);
+        assert.match(commandLine, /--type-aware/);
+        assert.match(commandLine, /--type-check/);
         assert.match(commandLine, /src[\\/]main\.ts/);
       })
       .otherwise(() => {
         assert.equal(basename(normalizedCommand), "oxlint");
         assert.equal(basename(normalize(join(normalizedCommand, "..", ".."))), "node_modules");
-        assert.deepEqual(calls[0]?.args, [join(cwd, "src/main.ts")]);
+        assert.deepEqual(calls[0]?.args, expectedOxlintArgs(join(cwd, "src/main.ts")));
       });
     assert.deepEqual(result?.content?.at(-1), {
       type: "text",
