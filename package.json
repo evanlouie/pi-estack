@@ -11,13 +11,21 @@
   ],
   "pi": {
     "extensions": [
-      "./extensions"
+      "./extensions",
+      "./node_modules/pi-mcp-adapter/index.ts",
+      "./node_modules/pi-subagents/src/extension/index.ts",
+      "./node_modules/pi-intercom/index.ts",
+      "./node_modules/pi-interactive-shell/index.ts"
     ],
     "skills": [
-      "./skills"
+      "./skills",
+      "./node_modules/pi-subagents/skills",
+      "./node_modules/pi-intercom/skills",
+      "./node_modules/pi-interactive-shell/skills"
     ],
     "prompts": [
-      "./prompts"
+      "./prompts",
+      "./node_modules/pi-subagents/prompts"
     ],
     "themes": [
       "./themes"
@@ -25,6 +33,10 @@
   },
   "dependencies": {
     "neverthrow": "^8.2.0",
+    "pi-interactive-shell": "^0.13.0",
+    "pi-intercom": "^0.6.0",
+    "pi-mcp-adapter": "^2.5.4",
+    "pi-subagents": "^0.24.0",
     "ts-pattern": "^5.9.0"
   },
   "peerDependencies": {
@@ -37,5 +49,11 @@
     "oxfmt": "^0.48.0",
     "oxlint": "^1.63.0",
     "oxlint-tsgolint": "^0.22.1"
-  }
+  },
+  "bundledDependencies": [
+    "pi-mcp-adapter",
+    "pi-subagents",
+    "pi-intercom",
+    "pi-interactive-shell"
+  ]
 }
