@@ -2,17 +2,21 @@
 
 ## Project Description
 
-pi-estack is the personal [pi-package](https://pi.dev/docs/latest/packages) for [evanlouie](https://github.com/evanlouie/) containing an assortment of pi extensions/skills/prompts/themes.
+pi-estack is the personal Pi package for [evanlouie](https://github.com/evanlouie/) containing an assortment of Pi extensions/skills/prompts/themes.
 
-## Developer Notes
+**ALWAYS** read through the Pi documentation regarding extensions, skills, prompt templates, themes, and packages, prior to working on this project.
 
-- `bun` is used for package management.
-- `node` is used as runtime.
+## Tooling
 
-## Rules
+### JavaScript/TypeScript
 
-- **ALWAYS** read through the pi documentation regarding extensions, skills, prompt templates, themes, and packages, prior to working on this project.
 - `bun` for package management.
 - `bun run lint` for linting/type-checking.
 - Use [neverthrow](https://github.com/supermacro/neverthrow) for error handling.
 - Use [ts-pattern](https://github.com/gvergnaud/ts-pattern) extensively for pattern matching; `if`/`else`/`switch` is **banned**.
+
+### Python
+
+- `uv` for package management and running scripts.
+- `uvx` for running scripts with auto-installed dependencies.
+- `ruff` for linting and formatting.
