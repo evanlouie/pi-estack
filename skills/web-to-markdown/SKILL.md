@@ -1,291 +1,237 @@
 ---
 name: web-to-markdown
-description: Fetch a webpage that fingerprints, blocks, or rate-limits scripted clients (Cloudflare, Akamai, PerimeterX, DataDome, "Just a moment...", 403/429 from plain curl) and convert the response to clean Markdown for LLMs/RAG by piping `curl-cffi` into `markitdown`. Use whenever the goal is "read this URL into Markdown" and a bare `curl`/`requests`/`markitdown URL` is or might be blocked, or you need impersonation, cookies, auth, or a saved HTML artifact alongside the conversion. Covers the basic pipe, browser impersonation targets, cookie/header carry-over, charset/encoding hints, downloading non-HTML payloads (PDF/DOCX behind a site) before conversion, batch URL lists, detecting Cloudflare challenges in output, and knowing when to fall back to the agent-browser skill (JS-rendered pages, hard CAPTCHAs).
+description: Fetch a webpage that fingerprints, blocks, or rate-limits scripted clients and convert it to clean Markdown for LLM/RAG. Use whenever the goal is "read this URL into Markdown" and a bare curl/requests/markitdown URL might be blocked, or cookies/headers/browser TLS impersonation/a saved HTML artifact are needed. Provides a PEP 723 self-contained Python script that installs/caches curl_cffi and markitdown through uv, so those packages do not need to be preinstalled; covers protected HTML, cookie/header carry-over, binary downloads, challenge-page detection, and when to fall back to agent-browser for JavaScript/CAPTCHA pages.
+compatibility: Requires uv and network access. The helper script downloads/caches its PEP 723 dependencies on first run.
 ---
 
 # web-to-markdown
 
-The job: turn a URL into LLM-ready Markdown, even when the site fingerprints scripted clients. The recipe is a two-stage pipe:
+Turn a URL into LLM-ready Markdown even when the site fingerprints scripted clients. Prefer the bundled Python script over hand-written shell pipelines. The script declares its dependencies inline with PEP 723, so `curl_cffi` and `markitdown` do **not** need to already exist on the host.
 
-```
-curl-cffi get <URL> -i <browser>  |  markitdown -x html  >  out.md
-```
+## Available script
 
-`curl-cffi` handles the **fetch** (real-browser TLS/JA3, HTTP/2 SETTINGS, header order, cookies, redirects). `markitdown` handles the **convert** (HTML → Markdown). Each tool stays in its lane.
+Run commands from this skill directory, or use the path to the script from your current working directory. From the repository root, use `skills/web-to-markdown/scripts/url_to_markdown.py`.
 
-> Refer to the `curl-cffi` and `markitdown` skills for full per-tool detail. This skill is just the integration.
+- **`scripts/url_to_markdown.py`** — Self-contained Python script. Fetches with `curl_cffi.requests` using browser impersonation, then converts response bytes with `markitdown`.
 
-## Why not just `markitdown URL`?
+The script includes pinned dependencies in its PEP 723 block:
 
-`markitdown` accepts HTTP/HTTPS URLs for static pages and specialty converters — but generic fetching uses a normal Python HTTP stack, not browser-like TLS fingerprints. On any bot-protected origin (Cloudflare, Akamai, etc.) it may get the challenge page, not the content. The pipe pattern routes the fetch through `curl-cffi` so the same Markdown converter runs on the real HTML.
-
-Use bare `markitdown URL` only for the **URL-shaped specialty converters** (YouTube, Wikipedia, Bing SERP, RSS) where the converter knows the API surface, or for unprotected static sites.
-
-## Mental model
-
-```
-┌──────────────┐  HTTPS   ┌───────────────────────┐  HTML   ┌──────────────┐  Markdown
-│  curl-cffi   │ ───────► │  origin (TLS-checks)  │ ──────► │  markitdown  │ ─────────► stdout / file
-│  get -i ...  │          │  Cloudflare/Akamai/…  │         │  -x html     │
-└──────────────┘                                            └──────────────┘
-       ▲                                                           ▲
-       │ optional: +cookies, Headers,                              │ optional: -c <charset>,
-       │ --proxy, --no-verify, --http3                             │ --keep-data-uris
+```python
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "curl_cffi==0.15.0",
+#   "markitdown[all]==0.1.5",
+# ]
+# ///
 ```
 
-- HTTP body is text/HTML → `-x html` hint to `markitdown` (stdin has no extension).
-- Body is a binary doc (PDF/DOCX/etc) → save raw bytes to disk first (prefer `--download --output basename` from the target directory; see the `curl-cffi --output` gotcha below), then `markitdown FILE`. Do not use stdout redirection for binary bodies because normal `curl-cffi` body output is decoded text.
-- Body is JSON/RSS → `-x json` or `-x rss` (markitdown picks the right converter).
-
-## Quick recipes
-
-### 1. Plain pipe (the default move)
+Check the interface first:
 
 ```bash
-curl-cffi get https://example.com -i chrome146 | markitdown -x html > example.md
+uv run skills/web-to-markdown/scripts/url_to_markdown.py --help
+# or, from this skill directory:
+uv run scripts/url_to_markdown.py --help
 ```
 
-### 2. Heavily protected site (start here if anything 403s)
+You can also run it directly if executable bits are preserved:
 
 ```bash
-curl-cffi get https://shielded.example.com/article \
-    -i chrome146 \
-    "User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" \
-    Accept-Language:en-US,en;q=0.9 \
-    Referer:https://www.google.com/ \
-  | markitdown -x html > article.md
+./scripts/url_to_markdown.py --help
 ```
 
-`-i chrome146` covers TLS+H2 fingerprints; the `User-Agent`/`Accept-Language`/`Referer` items make the _application-layer_ request look like a real browser too. Match the UA's Chrome version to the impersonation target.
-
-### 3. With Cloudflare clearance / session cookies
-
-Get `cf_clearance` (and any session cookies) once via a real browser (`agent-browser` skill or DevTools), then reuse:
+## Default workflow
 
 ```bash
-curl-cffi get https://protected.example.com/api/page \
-    -i chrome146 \
-    +cf_clearance="$CF_CLEARANCE" \
-    +session="$SESSION_COOKIE" \
-  | markitdown -x html > page.md
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://example.com/article' -o article.md
 ```
 
-`cf_clearance` is bound to the IP + UA + JA3 that solved the challenge. Keep impersonation target stable across runs, or it'll invalidate.
+What the script does:
 
-### 4. Save the HTML alongside the Markdown (debug-friendly default)
+1. Fetches with browser TLS/HTTP impersonation (`chrome146` by default).
+2. Keeps raw response bytes, so HTML and binary documents both work.
+3. Converts through `markitdown`, using hints from URL/content-type or `-x`/`-m`/`-c`.
+4. Warns if the Markdown looks like a Cloudflare/anti-bot challenge page.
+5. Fails with concise agent-readable errors instead of Python tracebacks for fetch, conversion, argument, and output-write failures.
+
+Save the fetched response for debugging or reprocessing:
 
 ```bash
-URL='https://news.example.com/post/123'
-curl-cffi get "$URL" -i chrome146 --download --output page.html
-markitdown page.html -o page.md
-# now you can re-render without refetching, diff converter changes, etc.
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://news.example.com/post/123' \
+  --fetched-output page.html \
+  -o page.md \
+  --summary-json page.fetch.json
 ```
 
-Two-step is preferred when:
+- Markdown goes to stdout unless `-o/--output` is set.
+- Diagnostics go to stderr.
+- Optional metadata is JSON via `--summary-json`.
 
-- You're iterating on the conversion (don't keep hitting the origin).
-- You need to grep the raw HTML for missing data the converter dropped.
-- The fetch is rate-limited or expensive.
+## Protected-site recipe
 
-### 5. Authenticated page (bearer / basic / form login)
+Start with the script and add browser-looking application-layer headers:
 
 ```bash
-# Bearer
-curl-cffi get https://api.example.com/doc/42 -i chrome146 \
-    Authorization:"Bearer $TOKEN" \
-  | markitdown -x html
-
-# Basic
-curl-cffi get https://wiki.internal/page -i chrome146 --auth "$USER:$PASS" \
-  | markitdown -x html
-
-# Login flow that sets cookies, then fetch (use a .http file via `curl-cffi run`)
-cat > flow.http <<'EOF'
-### login
-POST https://app.example.com/login
-Content-Type: application/x-www-form-urlencoded
-
-user=alice&pass=secret
-
-### read
-GET https://app.example.com/dashboard
-EOF
-# Caveat: `run -p b` prints every response body. Keep login responses bodyless,
-# or fetch the dashboard as a separate single GET after obtaining cookies.
-curl-cffi run flow.http -i chrome146 -p b | markitdown -x html > dashboard.md
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://shielded.example.com/article' \
+  -i chrome146 \
+  -H 'User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36' \
+  -H 'Accept-Language:en-US,en;q=0.9' \
+  -H 'Referer:https://www.google.com/' \
+  -o article.md
 ```
 
-`run` shares the cookie jar across requests by default, so the second `GET` carries the session.
+`-i chrome146` covers TLS/H2 fingerprints. `User-Agent`, `Accept-Language`, and `Referer` make the HTTP request look more like a real browser. Keep the `User-Agent` Chrome version aligned with the impersonation target.
 
-### 6. Non-HTML payload behind a protected origin
+## Cookies and authenticated pages
 
-PDFs, DOCX, PPTX, etc. — download raw bytes first, then convert (don't pipe binary into `-x html` and don't use stdout redirection for binary bodies):
+Get `cf_clearance` or session cookies with a real browser (`agent-browser` skill or DevTools), then reuse them:
 
 ```bash
-URL='https://gated.example.com/whitepaper.pdf'
-(cd /tmp && curl-cffi get "$URL" -i chrome146 +session="$SESSION" \
-    --download --output paper.pdf)
-markitdown /tmp/paper.pdf -o paper.md
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://protected.example.com/page' \
+  -i chrome146 \
+  -b "cf_clearance=$CF_CLEARANCE" \
+  -b "session=$SESSION_COOKIE" \
+  -o page.md
 ```
 
-If the URL doesn't reveal the extension, hint markitdown explicitly: `markitdown blob.bin -x pdf -o paper.md`.
-
-### 7. Charset that isn't UTF-8
-
-Old corp sites still ship `windows-1252` or `iso-8859-1`:
+Bearer and basic auth are first-class flags:
 
 ```bash
-curl-cffi get https://legacy.example.com -i chrome146 > legacy.html
-markitdown legacy.html -x html -c iso-8859-1 > legacy.md
+# Bearer token
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://api.example.com/doc/42' \
+  --bearer-token "$TOKEN" \
+  -o doc.md
+
+# Basic auth
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://wiki.internal/page' \
+  --basic-auth "$USER:$PASS" \
+  -o page.md
 ```
 
-Inspect first if unsure: `curl-cffi get URL --headers | grep -i charset`. For direct pipes, `curl-cffi` has already decoded the response and re-emits UTF-8 text, so omit `-c` or treat it as UTF-8.
-
-### 8. Batch a URL list → mirrored directory
+Proxy, timeout, and TLS verification controls:
 
 ```bash
-mkdir -p out
-while IFS= read -r url; do
-    [ -z "$url" ] && continue
-    name=$(printf '%s' "$url" | sha1sum | cut -c1-12)
-    echo "→ $url  ($name)"
-    # NOTE: curl-cffi --output ignores directories. Stdout redirection honors any path; use it.
-    curl-cffi get "$url" -i chrome146 > "out/$name.html" \
-        && markitdown "out/$name.html" -o "out/$name.md"
-done < urls.txt
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://example.com' \
+  --proxy 'http://127.0.0.1:8888' \
+  --timeout 20 \
+  --no-verify \
+  -o page.md
 ```
 
-Two-step keeps a recoverable HTML cache and avoids losing work if conversion crashes mid-run. Add `parallel` if you have it and the origin tolerates it.
+## Format hints
 
-### 9. Specialty URL converters (skip curl-cffi entirely)
-
-These have dedicated converters that talk to the platform API, not generic HTTP — the impersonation pipe is unnecessary:
+The script infers an extension from the final URL path or response `Content-Type`. Override when the URL/content-type is missing or misleading:
 
 ```bash
-markitdown 'https://www.youtube.com/watch?v=XXXX' -o video.md      # needs [youtube-transcription]
-markitdown 'https://en.wikipedia.org/wiki/Markdown' -o wiki.md
-markitdown 'https://example.com/feed.rss' -o feed.md
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://example.com/feed' -x rss -o feed.md
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://api.example.com/data' -x json -o data.md
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://legacy.example.com/page' -x html -c iso-8859-1 -o legacy.md
 ```
+
+Use MIME hints when they are more precise than extensions:
+
+```bash
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://example.com/blob' \
+  -m application/pdf \
+  -x pdf \
+  -o paper.md
+```
+
+## Binary files behind protected origins
+
+The Python script keeps raw response bytes, so protected PDF/DOCX/PPTX/XLSX URLs can go through the same entrypoint:
+
+```bash
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://gated.example.com/whitepaper.pdf' \
+  -i chrome146 \
+  -b "session=$SESSION" \
+  -x pdf \
+  --fetched-output whitepaper.pdf \
+  -o whitepaper.md
+```
+
+If the server returns an unhelpful `Content-Type`, pass `-x pdf`, `-x docx`, `-x pptx`, or `-x xlsx` explicitly.
+
+## Batch URL lists
+
+Use the script's batch mode instead of writing a shell loop. Blank lines and `#` comments in the URL list are ignored. Outputs use a stable 12-character SHA-1 prefix per URL:
+
+```bash
+uv run skills/web-to-markdown/scripts/url_to_markdown.py \
+  --url-list urls.txt \
+  --output-dir out
+```
+
+For each URL, batch mode writes:
+
+- `out/<name>.md` — converted Markdown
+- `out/<name>.body` — fetched response bytes
+- `out/<name>.json` — fetch/conversion summary
 
 ## Picking the impersonation target
 
-Default to **the latest stable Chrome** target available in your `curl-cffi` build:
+Default to the newest stable Chrome target supported by the pinned `curl_cffi` build. Inspect supported targets with a PEP 723 one-off using the same dependency version:
 
 ```bash
-curl-cffi doctor                                     # confirms versions
-uv run --with curl_cffi python -c \
-    "from curl_cffi.requests import BrowserType; print(*sorted(t.value for t in BrowserType), sep='\n')"
+uv run --with 'curl_cffi==0.15.0' python -c \
+  "from curl_cffi.requests import BrowserType; print(*sorted(t.value for t in BrowserType), sep='\n')"
 ```
 
 Heuristic:
 
-1. Start with `chrome146` (or the newest `chromeXYZ` listed).
-2. If the site is iOS/Safari-flavored or returns mobile HTML, try `safari260_ios` / `chrome131_android`.
-3. Match your `User-Agent` header's claimed version to the impersonation target. Mismatches are a common silent fingerprint failure.
-4. For Tor exit nodes use `tor145`.
+1. Start with `chrome146` or the newest listed `chromeXYZ`.
+2. If the site is mobile/iOS/Safari-flavored, try `safari260_ios` or `chrome131_android`.
+3. Keep the `User-Agent` version consistent with the impersonation target.
+4. For Tor exit nodes, try `tor145`.
 
-## Detecting that the fetch was actually blocked
+## Detecting blocked/challenge output
 
-The pipe will gleefully convert a Cloudflare challenge page and hand you a "Just a moment…" Markdown file. Always sanity-check.
+`scripts/url_to_markdown.py` warns when the converted Markdown contains common challenge-page fingerprints such as `Just a moment`, `Cloudflare`, or `verify you are human`.
 
-```bash
-# Check status before piping
-curl-cffi get "$URL" -i chrome146 --headers | head -3
+If output looks blocked:
 
-# Or fail fast in scripts
-out=$(curl-cffi get "$URL" -i chrome146 -p hb)
-status=$(printf '%s\n' "$out" | head -1)
-case "$status" in
-  *" 200 "*|*" 200")
-    printf '%s' "$out" | sed -n '/^$/,$p' | tail -n +2 | markitdown -x html > out.md
-    ;;
-  *)
-    echo "Blocked or error: $status" >&2
-    exit 1
-    ;;
-esac
-```
+1. Try a newer/different `--impersonate` target.
+2. Add browser-like headers (`User-Agent`, `Accept-Language`, `Referer`, and sometimes `Sec-Fetch-*`).
+3. Add permitted cookies (`cf_clearance`, session cookies) from a real browser.
+4. Save the fetched body and summary for inspection:
 
-Cheaper sniff: grep the converted Markdown for known challenge fingerprints:
+   ```bash
+   uv run skills/web-to-markdown/scripts/url_to_markdown.py "$URL" \
+     --allow-http-error \
+     --fetched-output debug.body \
+     --summary-json debug.json \
+     -o debug.md
+   ```
 
-```bash
-grep -qiE 'just a moment|checking your browser|attention required|cloudflare|enable javascript and cookies' out.md \
-  && echo "WARN: looks like a challenge/consent page, not the article" >&2
-```
+   If the built-in warning fires or `debug.md` is a challenge/consent page, proceed to the next step.
 
-If you see those:
-
-1. Re-run with a newer / different `--impersonate` target.
-2. Add browser-y headers (`User-Agent`, `Accept-Language`, `Referer`, `Sec-Fetch-*`).
-3. Inject a `cf_clearance` cookie obtained via real browser.
-4. As last resort, fall back to `agent-browser` (full DOM/JS).
+5. Fall back to `agent-browser` for JavaScript-rendered content or real CAPTCHAs.
 
 ## When to fall back to `agent-browser`
 
-The `curl-cffi → markitdown` pipe only works on **server-rendered** HTML. Bail out and use the `agent-browser` skill when:
+The curl_cffi → markitdown approach works best for server-rendered responses. Use `agent-browser` instead when:
 
-- Content only appears after JavaScript runs (SPA, React/Vue, "Loading…" placeholders).
-- The site shows a real interactive CAPTCHA (Turnstile/hCaptcha/reCAPTCHA challenge, not just a TLS check).
-- You need to click/login through a multi-step flow with anti-CSRF tokens that bind to a browser session.
-- The target uses Service Worker / WebSocket streams for content delivery.
+- Content appears only after JavaScript runs (SPA placeholders, infinite scroll, client-side rendering).
+- There is an interactive CAPTCHA/Turnstile/hCaptcha/reCAPTCHA.
+- Login requires multi-step CSRF/browser-bound flows.
+- Content arrives through Service Workers, WebSockets, or complex DOM interactions.
 
-A useful hybrid: drive `agent-browser` to solve the challenge and dump the cookie jar, then resume bulk fetching through the cheap `curl-cffi → markitdown` pipe with those cookies.
+A good hybrid: use `agent-browser` to log in or solve an allowed challenge, export cookies, then return to `scripts/url_to_markdown.py` for cheap bulk fetching.
 
-## Cleanup tips for the resulting Markdown
+## Cleanup tips for Markdown
 
-`markitdown`'s HTML converter is a faithful tag-by-tag translation — it does _not_ run a readability/main-content extractor. Expect navigation, footers, and table-heavy layouts (Hacker News, old wikis) to show up.
-
-Quick post-filters that are usually enough for LLM ingestion:
+`markitdown` is not a readability extractor; nav, cookie banners, and footers may remain. Keep the fetched HTML/body when quality matters:
 
 ```bash
-# Drop boilerplate lines
-markitdown -x html < page.html \
-  | sed -E '/^\s*\[(Home|Privacy|Terms|Cookie|Subscribe)\]/Id' \
-  | awk 'NF || prev; {prev=NF}'  # collapse blank-line runs
-
-# Take only the largest contiguous text block (good enough for articles)
-markitdown -x html < page.html | awk '
-  /^#/ {sec=$0; buf=""; next}
-  {buf=buf "\n" $0; if (length(buf)>maxlen){maxlen=length(buf); best=sec "\n" buf}}
-  END {print best}'
+uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://example.com/page' \
+  --fetched-output page.html \
+  -o page.md
 ```
 
-For higher quality, pre-process the HTML through `readability-cli` (`npm i -g @mozilla/readability` wrappers) or `trafilatura` before piping into `markitdown`:
-
-```bash
-curl-cffi get "$URL" -i chrome146 \
-  | uv run --with trafilatura python -c 'import sys,trafilatura; print(trafilatura.extract(sys.stdin.read(), output_format="html") or "")' \
-  | markitdown -x html > clean.md
-```
-
-## Diagnostics checklist
-
-### `curl-cffi --output` gotcha (read this once)
-
-`curl-cffi --output PATH` ignores the directory portion of `PATH` and writes the basename in the current working directory; it also requires `--download` to do anything at all. So `--download --output /tmp/page.html` from `~` writes `~/page.html`, not `/tmp/page.html`. Two safe patterns used throughout this skill:
-
-```bash
-# A. Textual bodies only: stdout redirection — any path, any depth, no flags. Preferred for HTML/JSON.
-curl-cffi get "$URL" -i chrome146 > /tmp/page.html
-
-# B. Binary bodies or exact raw bytes: cd into the target dir first, then --download --output basename.
-(cd /tmp && curl-cffi get "$URL" -i chrome146 --download --output page.html)
-```
-
-The `--download` mode also redirects response headers to stdout and the progress bar to stderr, which surprises pipelines. See the `curl-cffi` skill's "Output control" section for the full footgun list.
-
-When the pipe disappoints:
-
-1. `curl-cffi doctor` — versions sane?
-2. `curl-cffi get URL -i chrome146 --headers` — what status / `server` / `cf-ray` headers?
-3. Save the raw body (`--download --output debug.html`) and `wc -l debug.html`. A few hundred bytes of `<title>Just a moment…</title>` is the giveaway.
-4. Verify charset (`Content-Type: ...; charset=...`). For true source-byte charset handling, save raw/text to a file first and run `markitdown FILE -c <charset>`; direct pipes from `curl-cffi` are already decoded/re-encoded as UTF-8 text.
-5. Check `curl-cffi --version` aligns with available impersonation targets.
-6. Try an older / newer Chrome target; try `--http1.1` if HTTP/2 is being awkward.
-7. Still 403? Add cookies, then fall back to `agent-browser`.
+For higher-quality main-content extraction, pre-process saved HTML with a readability/trafilatura step, then convert that cleaned HTML separately with the `markitdown` skill. Do that only when the default Markdown contains too much boilerplate; the first pass should still be this script.
 
 ## See also
 
-- `curl-cffi` skill — full request-item syntax, impersonation matrix, `.http`/`.har` replay, proxies.
-- `markitdown` skill — all supported input formats, install extras, plugin / Azure DocIntel paths, Python API.
-- `agent-browser` skill — when JS execution is unavoidable.
+- `curl-cffi` skill — request-item syntax, impersonation matrix, `.http`/`.har` replay, proxies.
+- `markitdown` skill — supported input formats, extras, plugins, Azure Document Intelligence, Python API.
+- `agent-browser` skill — when JS execution or interactive browser state is unavoidable.
