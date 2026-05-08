@@ -27,10 +27,6 @@
     "neverthrow": "^8.2.0",
     "oxlint": "^1.63.0",
     "oxlint-tsgolint": "^0.22.1",
-    "pi-interactive-shell": "^0.13.0",
-    "pi-intercom": "^0.6.0",
-    "pi-mcp-adapter": "^2.5.4",
-    "pi-subagents": "^0.24.0",
     "ts-pattern": "^5.9.0"
   },
   "peerDependencies": {
