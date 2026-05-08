@@ -11,21 +11,13 @@
   ],
   "pi": {
     "extensions": [
-      "./extensions",
-      "./node_modules/pi-mcp-adapter/index.ts",
-      "./node_modules/pi-subagents/src/extension/index.ts",
-      "./node_modules/pi-intercom/index.ts",
-      "./node_modules/pi-interactive-shell/index.ts"
+      "./extensions"
     ],
     "skills": [
-      "./skills",
-      "./node_modules/pi-subagents/skills",
-      "./node_modules/pi-intercom/skills",
-      "./node_modules/pi-interactive-shell/skills"
+      "./skills"
     ],
     "prompts": [
-      "./prompts",
-      "./node_modules/pi-subagents/prompts"
+      "./prompts"
     ],
     "themes": [
       "./themes"
@@ -46,7 +38,7 @@
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^0.74.0",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@typescript/native-preview": "^7.0.0-dev.20260507.1",
     "oxfmt": "^0.48.0"
   },
