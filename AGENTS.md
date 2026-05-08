@@ -6,7 +6,7 @@ pi-estack is the personal Pi package for [evanlouie](https://github.com/evanloui
 
 **ALWAYS** read through the Pi documentation regarding extensions, skills, prompt templates, themes, and packages, prior to working on this project.
 
-## Tooling
+## Developer Guidelines
 
 ### JavaScript/TypeScript
 
