@@ -19,8 +19,8 @@ import {
   targetPath,
   type ToolResultPatch,
 } from "./lib/command-runner.js";
+import { isClojurePath } from "./lib/clojure.js";
 
-const CLOJURE_FILE_RE = /\.(clj|cljs|cljc|cljd|edn|bb)$/i;
 const MUTATING_TOOLS = new Set(["edit", "write"]);
 const REPAIR_COMMAND = "clj-paren-repair";
 const INSTALL_SKILL = "clj-paren-repair-install";
@@ -113,7 +113,7 @@ export function createToolResultHandler(
             toolName: P.when((toolName) => MUTATING_TOOLS.has(toolName)),
           },
           path: P.when(
-            (path): path is string => typeof path === "string" && CLOJURE_FILE_RE.test(path),
+            (path): path is string => typeof path === "string" && isClojurePath(path),
           ),
         },
         ({ event, path }) => {
