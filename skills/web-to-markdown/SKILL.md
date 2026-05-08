@@ -229,9 +229,3 @@ uv run skills/web-to-markdown/scripts/url_to_markdown.py 'https://example.com/pa
 ```
 
 For higher-quality main-content extraction, pre-process saved HTML with a readability/trafilatura step, then convert that cleaned HTML separately with the `markitdown` skill. Do that only when the default Markdown contains too much boilerplate; the first pass should still be this script.
-
-## See also
-
-- `curl-cffi` skill — request-item syntax, impersonation matrix, `.http`/`.har` replay, proxies.
-- `markitdown` skill — supported input formats, extras, plugins, Azure Document Intelligence, Python API.
-- `agent-browser` skill — when JS execution or interactive browser state is unavoidable.
