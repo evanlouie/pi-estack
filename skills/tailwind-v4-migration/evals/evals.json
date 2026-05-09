@@ -1,0 +1,35 @@
+{
+  "skill_name": "tailwind-v4-migration",
+  "evals": [
+    {
+      "id": "vite-react-upgrade",
+      "prompt": "Migrate this Vite React app from Tailwind CSS 3.4 to Tailwind 4. It has package.json, vite.config.ts, postcss.config.js, src/index.css, and a tailwind.config.js with theme.extend colors.",
+      "expected_output": "The agent audits first, checks clean git and Node 20+, runs or recommends the official upgrade tool, updates Vite to @tailwindcss/vite, replaces @tailwind directives with @import \"tailwindcss\", converts custom colors to @theme variables, runs validation commands, and reports remaining visual risks."
+    },
+    {
+      "id": "manual-config-conversion",
+      "prompt": "The upgrade tool did not migrate our custom tailwind.config.js. Convert theme.extend colors, fontFamily, screens, boxShadow, and container padding to v4 CSS-first config.",
+      "expected_output": "The agent uses @theme for color/font/breakpoint/shadow tokens, @utility container for container padding/centering, avoids blindly porting content, flags unsupported safelist/corePlugins/separator if present, and uses @config only as a temporary bridge if required."
+    },
+    {
+      "id": "class-breaking-changes",
+      "prompt": "Audit and fix these Tailwind v3 classes for v4: shadow-sm shadow rounded ring outline-none bg-opacity-50 text-opacity-75 hover:!bg-red-500 bg-[--brand] grid-cols-[max-content,auto] transform-none.",
+      "expected_output": "The agent maps deterministic renames such as shadow-sm→shadow-xs, shadow→shadow-sm, rounded→rounded-sm, ring→ring-3, outline-none→outline-hidden, moves important to the end, changes bg-[--brand] to bg-(--brand), flags opacity utilities for manual color-aware conversion, changes grid comma spaces to underscores, and replaces transform-none with individual reset utilities as appropriate."
+    },
+    {
+      "id": "vue-apply-failure",
+      "prompt": "After Tailwind v4, @apply in our Vue single-file components cannot see text-brand-500 or btn utility from app.css. Diagnose and fix.",
+      "expected_output": "The agent identifies separately bundled stylesheets, adds @reference to the main CSS file in the Vue style block or replaces @apply with CSS variables, confirms custom utilities are defined with @utility where variant-aware behavior is needed, and validates the build."
+    },
+    {
+      "id": "monorepo-source-detection",
+      "prompt": "Our monorepo package apps/admin uses Tailwind v4 but classes in packages/ui are missing and CMS color classes are generated dynamically.",
+      "expected_output": "The agent sets source detection correctly with source() or source(none), registers packages/ui with @source, replaces dynamic class concatenation with static maps where possible, uses @source inline() for finite CMS class safelists, and avoids scanning all node_modules."
+    },
+    {
+      "id": "postcss-cli-troubleshooting",
+      "prompt": "The build errors after upgrading: it says Tailwind cannot be used directly as a PostCSS plugin, and our build:css script still calls npx tailwindcss.",
+      "expected_output": "The agent updates PostCSS to @tailwindcss/postcss, installs/uses @tailwindcss/cli for CLI builds, updates scripts, removes autoprefixer/postcss-import only if not needed elsewhere, and reruns the build."
+    }
+  ]
+}

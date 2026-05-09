@@ -1,0 +1,26 @@
+{
+  "skill_name": "a2ui",
+  "evals": [
+    {
+      "id": "v09-booking-form",
+      "prompt": "Create a v0.9 A2UI JSON array for a reservation confirmation form with party size, date/time, and Confirm/Cancel buttons. Use the Basic Catalog.",
+      "expected_output": "A valid v0.9 A2UI message array with createSurface, updateComponents, updateDataModel, one root component, bound form fields, and event actions for confirm and cancel."
+    },
+    {
+      "id": "v08-to-v09-conversion",
+      "prompt": "Convert this v0.8 A2UI profile card JSONL to v0.9 and explain the important changes.",
+      "expected_output": "The answer converts surfaceUpdate to updateComponents, beginRendering to createSurface plus root convention, component wrappers to flat component strings, literal wrappers to raw literals, and dataModelUpdate typed contents to updateDataModel values.",
+      "files": ["assets/examples/a2ui_v08_profile_card.jsonl"]
+    },
+    {
+      "id": "debug-invalid-v09",
+      "prompt": "Review this A2UI v0.9 payload and identify why it will not render: [{\"version\":\"v0.9\",\"updateComponents\":{\"surfaceId\":\"x\",\"components\":[{\"id\":\"root\",\"component\":{\"Text\":{\"text\":\"Hi\"}}}]}}]",
+      "expected_output": "The review catches that createSurface is missing for a new surface and that v0.9 component must be a string, not a v0.8 wrapper object."
+    },
+    {
+      "id": "a2a-datapart",
+      "prompt": "Wrap a v0.9 A2UI createSurface message in an A2A DataPart for the A2UI extension.",
+      "expected_output": "A DataPart with kind data, metadata.mimeType application/json+a2ui, and data as an array containing the v0.9 createSurface message."
+    }
+  ]
+}

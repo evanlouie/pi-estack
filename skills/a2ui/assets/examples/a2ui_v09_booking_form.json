@@ -1,0 +1,116 @@
+[
+  {
+    "version": "v0.9",
+    "createSurface": {
+      "surfaceId": "booking-form",
+      "catalogId": "https://a2ui.org/specification/v0_9/basic_catalog.json",
+      "sendDataModel": true
+    }
+  },
+  {
+    "version": "v0.9",
+    "updateComponents": {
+      "surfaceId": "booking-form",
+      "components": [
+        {
+          "id": "root",
+          "component": "Card",
+          "child": "form-layout"
+        },
+        {
+          "id": "form-layout",
+          "component": "Column",
+          "children": ["title", "party-size-field", "time-field", "newsletter-checkbox", "actions-row"],
+          "justify": "start",
+          "align": "stretch"
+        },
+        {
+          "id": "title",
+          "component": "Text",
+          "text": "Confirm reservation",
+          "variant": "h2"
+        },
+        {
+          "id": "party-size-field",
+          "component": "TextField",
+          "label": "Party size",
+          "value": {"path": "/reservation/partySize"},
+          "variant": "number"
+        },
+        {
+          "id": "time-field",
+          "component": "DateTimeInput",
+          "value": {"path": "/reservation/time"},
+          "enableDate": true,
+          "enableTime": true
+        },
+        {
+          "id": "newsletter-checkbox",
+          "component": "CheckBox",
+          "label": "Send me restaurant updates",
+          "value": {"path": "/preferences/newsletter"}
+        },
+        {
+          "id": "actions-row",
+          "component": "Row",
+          "children": ["cancel-button", "confirm-button"],
+          "justify": "end",
+          "align": "center"
+        },
+        {
+          "id": "cancel-button-label",
+          "component": "Text",
+          "text": "Cancel"
+        },
+        {
+          "id": "cancel-button",
+          "component": "Button",
+          "child": "cancel-button-label",
+          "variant": "borderless",
+          "action": {
+            "event": {
+              "name": "cancel_reservation",
+              "context": {"source": "booking-form"}
+            }
+          }
+        },
+        {
+          "id": "confirm-button-label",
+          "component": "Text",
+          "text": "Confirm"
+        },
+        {
+          "id": "confirm-button",
+          "component": "Button",
+          "child": "confirm-button-label",
+          "variant": "primary",
+          "action": {
+            "event": {
+              "name": "confirm_reservation",
+              "context": {
+                "reservation": {"path": "/reservation"},
+                "newsletter": {"path": "/preferences/newsletter"}
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "version": "v0.9",
+    "updateDataModel": {
+      "surfaceId": "booking-form",
+      "path": "/",
+      "value": {
+        "reservation": {
+          "partySize": 2,
+          "time": "2026-05-10T19:00:00-07:00"
+        },
+        "preferences": {
+          "newsletter": false
+        }
+      }
+    }
+  }
+]

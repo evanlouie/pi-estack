@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/open-json-ui-screen.schema.json",
+  "title": "Permissive Open-JSON-UI Screen Dialect Schema",
+  "description": "A permissive helper schema for the screen/content dialect used by this skill. This is not an official Open-JSON-UI schema; prefer a project-provided renderer schema when available.",
+  "type": "object",
+  "required": ["type", "content"],
+  "properties": {
+    "type": { "const": "screen" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "content": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/component" }
+    },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/component" }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "component": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "label": { "type": "string" },
+        "text": { "type": "string" },
+        "description": { "type": "string" },
+        "content": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/component" }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              { "type": "string" },
+              { "$ref": "#/$defs/component" },
+              { "type": "object" }
+            ]
+          }
+        },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/component" }
+        },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/component" }
+        },
+        "columns": { "type": "array" },
+        "rows": { "type": "array" },
+        "data": { "type": ["array", "object"] },
+        "action": { "type": "object" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

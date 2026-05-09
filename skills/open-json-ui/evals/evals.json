@@ -1,0 +1,20 @@
+{
+  "skill_name": "open-json-ui",
+  "evals": [
+    {
+      "id": "generate-status-screen",
+      "prompt": "Create an Open-JSON-UI payload for a project status screen with one summary card, a risk badge, and two next-step actions. No renderer schema is provided.",
+      "expected_output": "A valid JSON payload using the screen/content dialect, with type='screen', content array, card, badge, and declarative button actions. The response states the dialect if explanatory text is included."
+    },
+    {
+      "id": "review-invalid-button",
+      "prompt": "Review this Open-JSON-UI button: {\"type\":\"button\",\"label\":\"Run\",\"onClick\":\"fetch('/admin/delete')\"}. What is wrong and how should it be fixed?",
+      "expected_output": "Identifies executable or raw event-handler style content as inappropriate, recommends a declarative action object with name and parameters, and avoids generating executable JavaScript."
+    },
+    {
+      "id": "ag-ui-carrier",
+      "prompt": "Wrap an Open-JSON-UI chart payload inside an AG-UI STATE_DELTA event for a frontend that expects delta.ui.spec='open-json-ui'.",
+      "expected_output": "A JSON object with type='STATE_DELTA', delta.ui.spec='open-json-ui', and delta.ui.content containing a screen or chart payload with compact chart data."
+    }
+  ]
+}

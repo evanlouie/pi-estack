@@ -1,0 +1,50 @@
+[
+  {
+    "query": "Upgrade our app from Tailwind 3.4 to Tailwind 4 and fix the broken classes.",
+    "should_trigger": true
+  },
+  {
+    "query": "Why did @apply stop working in Vue after moving to Tailwind v4?",
+    "should_trigger": true
+  },
+  {
+    "query": "Convert this tailwind.config.js theme.extend block to v4 @theme variables.",
+    "should_trigger": true
+  },
+  {
+    "query": "The Tailwind v4 upgrade tool changed a bunch of classes; can you review the diff?",
+    "should_trigger": true
+  },
+  {
+    "query": "Our old safelist in tailwind.config.js no longer works in v4.",
+    "should_trigger": true
+  },
+  {
+    "query": "I'm seeing missing classes from a workspace UI package after upgrading to Tailwind 4.",
+    "should_trigger": true
+  },
+  {
+    "query": "Make this new landing page prettier with Tailwind classes.",
+    "should_trigger": false
+  },
+  {
+    "query": "Explain flexbox justify-content utilities in Tailwind CSS.",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a responsive card component using Tailwind v4.",
+    "should_trigger": false
+  },
+  {
+    "query": "What is the difference between CSS grid and flexbox?",
+    "should_trigger": false
+  },
+  {
+    "query": "Install Tailwind in a brand-new Vite app.",
+    "should_trigger": false
+  },
+  {
+    "query": "Write custom CSS for a modal animation.",
+    "should_trigger": false
+  }
+]
