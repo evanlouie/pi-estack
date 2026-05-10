@@ -21,7 +21,7 @@ Use this skill to move an existing Tailwind CSS v3.x codebase to v4.x safely. Tr
    - Identify Tailwind entry CSS files, `tailwind.config.*`, PostCSS/Vite configs, package scripts, component file types, and browser support requirements.
    - Run the audit script before changing files:
      ```bash
-     node scripts/audit_tailwind_v4_migration.mjs --project /path/to/project --format markdown > /path/to/project/tailwind-v4-audit.md
+     deno run --allow-read scripts/audit_tailwind_v4_migration.ts --project /path/to/project --format markdown > /path/to/project/tailwind-v4-audit.md
      ```
 
 2. **Prefer the official upgrade tool when the project allows it**
@@ -44,7 +44,7 @@ Use this skill to move an existing Tailwind CSS v3.x codebase to v4.x safely. Tr
      - Do not rely on `corePlugins`, `safelist`, or `separator` in a JS config; they are not supported in v4.
    - Apply deterministic class/token changes. For a dry run:
      ```bash
-     node scripts/replace_tailwind_v4_renames.mjs --project /path/to/project --dry-run
+     deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project /path/to/project --dry-run
      ```
      Only use `--write` after reviewing the preview and confirming the project is on a migration branch.
 
@@ -72,8 +72,8 @@ Use this skill to move an existing Tailwind CSS v3.x codebase to v4.x safely. Tr
 
 ## Available scripts
 
-- `scripts/audit_tailwind_v4_migration.mjs` — scans a project and reports likely v3-to-v4 migration issues. It does not modify files.
-- `scripts/replace_tailwind_v4_renames.mjs` — performs a conservative dry-run or write-mode rewrite of deterministic class renames. It intentionally skips changes that require design judgment.
+- `scripts/audit_tailwind_v4_migration.ts` — scans a project and reports likely v3-to-v4 migration issues. It does not modify files.
+- `scripts/replace_tailwind_v4_renames.ts` — performs a conservative dry-run or write-mode rewrite of deterministic class renames. It intentionally skips changes that require design judgment.
 
 Run scripts from the skill directory and pass the target project path with `--project`.
 

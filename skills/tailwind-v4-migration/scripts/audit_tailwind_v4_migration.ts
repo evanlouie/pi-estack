@@ -1,13 +1,54 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S deno run --allow-read
+/// <reference types="deno" />
 /*
   Tailwind CSS v3 -> v4 migration audit.
   Scans a target project and reports likely manual migration work.
   This script never modifies files.
 */
 
-import fs from "node:fs";
-import path from "node:path";
-import process from "node:process";
+import { basename, extname, join, relative, resolve, sep } from "node:path";
+
+type Severity = "action" | "review" | "info";
+type OutputFormat = "markdown" | "md" | "json";
+type ParsedArgs = Record<string, string | boolean>;
+
+type Finding = {
+  severity: Severity;
+  rule: string;
+  file: string;
+  line: number;
+  message: string;
+  recommendation: string;
+};
+
+type AuditStats = {
+  projectRoot: string;
+  scannedFiles: number;
+  packageManager: string;
+  hasTailwindConfig: boolean;
+  hasPackageJson: boolean;
+};
+
+type AuditOutput = {
+  generatedAt: string;
+  stats: AuditStats;
+  countsBySeverity: Record<string, number>;
+  countsByRule: Record<string, number>;
+  findings: Finding[];
+};
+
+type RemovedUtilityPattern = readonly [
+  label: string,
+  regex: RegExp,
+  recommendation: string,
+];
+
+type TextCheck = readonly [
+  rule: string,
+  regex: RegExp,
+  message: string,
+  recommendation: string,
+];
 
 const DEFAULT_EXCLUDED_DIRS = new Set([
   ".git",
@@ -71,14 +112,18 @@ const CONFIG_FILENAMES = new Set([
   "postcss.config.cjs",
   "postcss.config.mjs",
   "postcss.config.ts",
+  "postcss.config.mts",
+  "postcss.config.cts",
   "vite.config.js",
+  "vite.config.cjs",
   "vite.config.mjs",
   "vite.config.ts",
   "vite.config.mts",
+  "vite.config.cts",
   "package.json",
 ]);
 
-const CLASS_RENAMES = [
+const CLASS_RENAMES: ReadonlyArray<readonly [from: string, to: string]> = [
   ["shadow-sm", "shadow-xs"],
   ["shadow", "shadow-sm"],
   ["drop-shadow-sm", "drop-shadow-xs"],
@@ -93,7 +138,7 @@ const CLASS_RENAMES = [
   ["ring", "ring-3"],
 ];
 
-const REMOVED_UTILITY_PATTERNS = [
+const REMOVED_UTILITY_PATTERNS: ReadonlyArray<RemovedUtilityPattern> = [
   [
     "bg-opacity-*",
     /(?:^|[^\w-])bg-opacity-\d+\b/g,
@@ -147,43 +192,49 @@ const REMOVED_UTILITY_PATTERNS = [
   ],
 ];
 
-const args = parseArgs(process.argv.slice(2));
-const projectRoot = path.resolve(args.project || process.cwd());
-const format = args.format || "markdown";
-const maxFileSize = Number(args["max-file-size"] || 1_000_000);
-const maxSamples = Number(args["max-samples"] || 12);
+const args = parseArgs(Deno.args);
 
-if (!fs.existsSync(projectRoot) || !fs.statSync(projectRoot).isDirectory()) {
+if (hasFlag(args, "help") || hasFlag(args, "h")) {
+  printHelp();
+  Deno.exit(0);
+}
+
+const projectRoot = resolve(stringArg(args, "project", Deno.cwd()));
+const format = stringArg(args, "format", "markdown") as OutputFormat;
+const maxFileSize = numberArg(args, "max-file-size", 1_000_000, 0);
+const maxSamples = numberArg(args, "max-samples", 12, 1);
+
+if (!isDirectory(projectRoot)) {
   console.error(
     `Error: --project must point to an existing directory. Received: ${projectRoot}`,
   );
-  process.exit(2);
+  Deno.exit(2);
 }
 
 const files = walk(projectRoot, maxFileSize);
-const findings = [];
-const stats = {
+const findings: Finding[] = [];
+const stats: AuditStats = {
   projectRoot,
   scannedFiles: files.length,
   packageManager: detectPackageManager(projectRoot),
   hasTailwindConfig: false,
-  hasPackageJson: fs.existsSync(path.join(projectRoot, "package.json")),
+  hasPackageJson: exists(join(projectRoot, "package.json")),
 };
 
 for (const file of files) {
-  const rel = path.relative(projectRoot, file).replaceAll(path.sep, "/");
-  const base = path.basename(file);
-  const ext = path.extname(file).toLowerCase();
-  let text;
+  const rel = relative(projectRoot, file).replaceAll(sep, "/");
+  const base = basename(file);
+  const ext = extname(file).toLowerCase();
+  let text: string;
   try {
-    text = fs.readFileSync(file, "utf8");
+    text = Deno.readTextFileSync(file);
   } catch (error) {
     addFinding(
       "info",
       "unreadable-file",
       rel,
       0,
-      `Skipped unreadable file: ${error.message}`,
+      `Skipped unreadable file: ${errorMessage(error)}`,
       "Confirm permissions or ignore if generated.",
     );
     continue;
@@ -200,7 +251,7 @@ for (const file of files) {
   analyzeClassTokens(rel, text, ext);
 }
 
-const output = {
+const output: AuditOutput = {
   generatedAt: new Date().toISOString(),
   stats,
   countsBySeverity: countBy(findings, "severity"),
@@ -214,18 +265,25 @@ if (format === "json") {
   console.log(renderMarkdown(output, maxSamples));
 } else {
   console.error("Error: --format must be markdown or json.");
-  process.exit(2);
+  Deno.exit(2);
 }
 
-function parseArgs(argv) {
-  const out = {};
+function parseArgs(argv: string[]): ParsedArgs {
+  const out: ParsedArgs = {};
   for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === "--help" || arg === "-h") {
-      printHelp();
-      process.exit(0);
+    const arg = argv[i] ?? "";
+    if (arg === "-h") {
+      out["h"] = true;
+      continue;
     }
     if (!arg.startsWith("--")) continue;
+
+    const equalsIndex = arg.indexOf("=");
+    if (equalsIndex >= 0) {
+      out[arg.slice(2, equalsIndex)] = arg.slice(equalsIndex + 1);
+      continue;
+    }
+
     const key = arg.slice(2);
     const next = argv[i + 1];
     if (!next || next.startsWith("--")) {
@@ -238,8 +296,47 @@ function parseArgs(argv) {
   return out;
 }
 
-function printHelp() {
-  console.log(`Usage: node scripts/audit_tailwind_v4_migration.mjs [OPTIONS]
+function hasFlag(parsedArgs: ParsedArgs, key: string): boolean {
+  return parsedArgs[key] === true;
+}
+
+function stringArg(
+  parsedArgs: ParsedArgs,
+  key: string,
+  defaultValue: string,
+): string {
+  const value = parsedArgs[key];
+  if (value === undefined) return defaultValue;
+  if (typeof value !== "string") {
+    console.error(`Error: --${key} requires a value.`);
+    Deno.exit(2);
+  }
+  return value;
+}
+
+function numberArg(
+  parsedArgs: ParsedArgs,
+  key: string,
+  defaultValue: number,
+  minimum: number,
+): number {
+  const value = parsedArgs[key];
+  if (value === undefined) return defaultValue;
+  if (typeof value !== "string") {
+    console.error(`Error: --${key} requires a numeric value.`);
+    Deno.exit(2);
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < minimum) {
+    console.error(`Error: --${key} must be a number >= ${minimum}.`);
+    Deno.exit(2);
+  }
+  return number;
+}
+
+function printHelp(): void {
+  console.log(
+    `Usage: deno run --allow-read scripts/audit_tailwind_v4_migration.ts [OPTIONS]
 
 Scans a Tailwind CSS v3 project for likely v4 migration work. Does not modify files.
 
@@ -251,57 +348,70 @@ Options:
   --help                Show this help
 
 Examples:
-  node scripts/audit_tailwind_v4_migration.mjs --project ~/app --format markdown
-  node scripts/audit_tailwind_v4_migration.mjs --project . --format json > audit.json`);
+  deno run --allow-read scripts/audit_tailwind_v4_migration.ts --project ~/app --format markdown
+  deno run --allow-read scripts/audit_tailwind_v4_migration.ts --project . --format json > audit.json`,
+  );
 }
 
-function walk(root, maxBytes) {
-  const results = [];
+function walk(root: string, maxBytes: number): string[] {
+  const results: string[] = [];
   const stack = [root];
+
   while (stack.length) {
     const current = stack.pop();
-    let entries;
+    if (current === undefined) break;
+
+    let entries: Deno.DirEntry[];
     try {
-      entries = fs.readdirSync(current, { withFileTypes: true });
+      entries = [...Deno.readDirSync(current)];
     } catch {
       continue;
     }
+
     for (const entry of entries) {
-      const full = path.join(current, entry.name);
-      if (entry.isDirectory()) {
+      const full = join(current, entry.name);
+      if (entry.isDirectory) {
         if (!DEFAULT_EXCLUDED_DIRS.has(entry.name)) stack.push(full);
         continue;
       }
-      if (!entry.isFile()) continue;
-      const ext = path.extname(entry.name).toLowerCase();
-      if (!TEXT_EXTENSIONS.has(ext) && !CONFIG_FILENAMES.has(entry.name))
+      if (!entry.isFile) continue;
+
+      const ext = extname(entry.name).toLowerCase();
+      if (!TEXT_EXTENSIONS.has(ext) && !CONFIG_FILENAMES.has(entry.name)) {
         continue;
+      }
+
       let size = 0;
       try {
-        size = fs.statSync(full).size;
+        size = Deno.statSync(full).size;
       } catch {
         continue;
       }
       if (size <= maxBytes) results.push(full);
     }
   }
+
   return results.sort((a, b) => a.localeCompare(b));
 }
 
-function detectPackageManager(root) {
-  if (fs.existsSync(path.join(root, "pnpm-lock.yaml"))) return "pnpm";
-  if (fs.existsSync(path.join(root, "yarn.lock"))) return "yarn";
-  if (fs.existsSync(path.join(root, "bun.lock"))) return "bun";
-  if (fs.existsSync(path.join(root, "bun.lockb"))) return "bun";
-  if (fs.existsSync(path.join(root, "deno.lock"))) return "deno";
-  if (fs.existsSync(path.join(root, "package-lock.json"))) return "npm";
+function detectPackageManager(root: string): string {
+  if (exists(join(root, "pnpm-lock.yaml"))) return "pnpm";
+  if (exists(join(root, "yarn.lock"))) return "yarn";
+  if (exists(join(root, "bun.lock"))) return "bun";
+  if (exists(join(root, "bun.lockb"))) return "bun";
+  if (exists(join(root, "deno.lock"))) return "deno";
+  if (exists(join(root, "package-lock.json"))) return "npm";
   return "unknown";
 }
 
-function analyzePackageJson(rel, text) {
-  let pkg;
+function analyzePackageJson(rel: string, text: string): void {
+  let pkg: Record<string, unknown>;
   try {
-    pkg = JSON.parse(text);
+    const parsed: unknown = JSON.parse(text);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("package.json root must be an object");
+    }
+    pkg = parsed as Record<string, unknown>;
   } catch {
     addFinding(
       "action",
@@ -313,8 +423,12 @@ function analyzePackageJson(rel, text) {
     );
     return;
   }
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-  const tailwindVersion = deps.tailwindcss;
+
+  const deps = {
+    ...asStringMap(pkg["dependencies"]),
+    ...asStringMap(pkg["devDependencies"]),
+  };
+  const tailwindVersion = deps["tailwindcss"];
   if (tailwindVersion) {
     if (/\b3\./.test(tailwindVersion) || /\^3|~3|>=3/.test(tailwindVersion)) {
       addFinding(
@@ -336,7 +450,8 @@ function analyzePackageJson(rel, text) {
       "Confirm Tailwind is managed elsewhere in the workspace.",
     );
   }
-  if (deps.autoprefixer) {
+
+  if (deps["autoprefixer"]) {
     addFinding(
       "review",
       "autoprefixer-present",
@@ -356,14 +471,10 @@ function analyzePackageJson(rel, text) {
       "Tailwind v4 handles imports for Tailwind processing; remove postcss-import if it was only present for Tailwind.",
     );
   }
-  const scripts =
-    typeof pkg.scripts === "object" && pkg.scripts !== null ? pkg.scripts : {};
+
+  const scripts = asStringMap(pkg["scripts"]);
   for (const [name, command] of Object.entries(scripts)) {
-    if (
-      typeof command === "string" &&
-      /\btailwindcss\b/.test(command) &&
-      !/@tailwindcss\/cli/.test(command)
-    ) {
+    if (/\btailwindcss\b/.test(command) && !/@tailwindcss\/cli/.test(command)) {
       addFinding(
         "action",
         "cli-package-moved",
@@ -374,7 +485,8 @@ function analyzePackageJson(rel, text) {
       );
     }
   }
-  if (deps.vite && !deps["@tailwindcss/vite"]) {
+
+  if (deps["vite"] && !deps["@tailwindcss/vite"]) {
     addFinding(
       "review",
       "vite-plugin-missing",
@@ -385,7 +497,7 @@ function analyzePackageJson(rel, text) {
     );
   }
   if (
-    (deps.postcss || hasPostCssConfig(projectRoot)) &&
+    (deps["postcss"] || hasPostCssConfig(projectRoot)) &&
     !deps["@tailwindcss/postcss"]
   ) {
     addFinding(
@@ -399,16 +511,18 @@ function analyzePackageJson(rel, text) {
   }
 }
 
-function hasPostCssConfig(root) {
+function hasPostCssConfig(root: string): boolean {
   return [
     "postcss.config.js",
     "postcss.config.cjs",
     "postcss.config.mjs",
     "postcss.config.ts",
-  ].some((name) => fs.existsSync(path.join(root, name)));
+    "postcss.config.mts",
+    "postcss.config.cts",
+  ].some((name) => exists(join(root, name)));
 }
 
-function analyzeTailwindConfig(rel, text) {
+function analyzeTailwindConfig(rel: string, text: string): void {
   addFinding(
     "review",
     "js-config-present",
@@ -417,7 +531,7 @@ function analyzeTailwindConfig(rel, text) {
     "Found tailwind.config.*.",
     "v4 does not auto-detect JS config files. Convert to CSS-first config or load explicitly with @config as a bridge.",
   );
-  const checks = [
+  const checks: ReadonlyArray<TextCheck> = [
     [
       "content-option",
       /\bcontent\s*:/,
@@ -479,7 +593,7 @@ function analyzeTailwindConfig(rel, text) {
   }
 }
 
-function analyzePostCssConfig(rel, text) {
+function analyzePostCssConfig(rel: string, text: string): void {
   if (/tailwindcss/.test(text) && !/@tailwindcss\/postcss/.test(text)) {
     addFinding(
       "action",
@@ -512,7 +626,7 @@ function analyzePostCssConfig(rel, text) {
   }
 }
 
-function analyzeViteConfig(rel, text) {
+function analyzeViteConfig(rel: string, text: string): void {
   if (!/@tailwindcss\/vite/.test(text)) {
     addFinding(
       "review",
@@ -525,7 +639,7 @@ function analyzeViteConfig(rel, text) {
   }
 }
 
-function analyzeCssLike(rel, text, ext) {
+function analyzeCssLike(rel: string, text: string, ext: string): void {
   if (/@tailwind\s+(base|components|utilities|screens)\b/.test(text)) {
     addFinding(
       "action",
@@ -558,9 +672,10 @@ function analyzeCssLike(rel, text, ext) {
   }
   if (
     /@apply\b/.test(text) &&
-    /\.(vue|svelte|astro|module\.css|module\.scss|module\.sass|module\.less)$/.test(
-      rel,
-    )
+    /\.(vue|svelte|astro|module\.css|module\.scss|module\.sass|module\.less)$/
+      .test(
+        rel,
+      )
   ) {
     addFinding(
       "action",
@@ -613,10 +728,10 @@ function analyzeCssLike(rel, text, ext) {
   }
 }
 
-function analyzeClassTokens(rel, text, ext) {
+function analyzeClassTokens(rel: string, text: string, ext: string): void {
   for (const [label, regex, recommendation] of REMOVED_UTILITY_PATTERNS) {
     const line = lineOf(text, regex);
-    if (line)
+    if (line) {
       addFinding(
         "action",
         `removed-${label}`,
@@ -625,11 +740,12 @@ function analyzeClassTokens(rel, text, ext) {
         `Found removed/deprecated utility pattern ${label}.`,
         recommendation,
       );
+    }
   }
   for (const [from, to] of CLASS_RENAMES) {
     const regex = classTokenRegex(from);
     const line = lineOf(text, regex);
-    if (line)
+    if (line) {
       addFinding(
         "action",
         `renamed-${from}`,
@@ -638,8 +754,9 @@ function analyzeClassTokens(rel, text, ext) {
         `Found v3 utility ${from}.`,
         `Use ${to} to preserve v3 appearance where applicable.`,
       );
+    }
   }
-  const classChecks = [
+  const classChecks: ReadonlyArray<TextCheck> = [
     [
       "important-prefix",
       /(?:^|[\s"'`{=])(?:[A-Za-z0-9_@-]+:)*!(?:[A-Za-z0-9_@-]+[-/][A-Za-z0-9_@[\][()./%#-]*|absolute\b|block\b|blur\b|border\b|container\b|fixed\b|flex\b|grid\b|hidden\b|inline\b|inline-block\b|relative\b|ring\b|rounded\b|shadow\b|sr-only\b|sticky\b)/m,
@@ -697,7 +814,7 @@ function analyzeClassTokens(rel, text, ext) {
   ];
   for (const [rule, regex, message, recommendation] of classChecks) {
     const line = lineOf(text, regex);
-    if (line)
+    if (line) {
       addFinding(
         rule.includes("dynamic") ? "action" : "review",
         rule,
@@ -706,13 +823,14 @@ function analyzeClassTokens(rel, text, ext) {
         message,
         recommendation,
       );
+    }
   }
   if (
     ext === ".html" ||
     ext === ".vue" ||
     ext === ".svelte" ||
     ext === ".astro" ||
-    /\.[jt]sx?$/.test(ext)
+    [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"].includes(ext)
   ) {
     const hiddenLine = lineOf(
       text,
@@ -731,7 +849,7 @@ function analyzeClassTokens(rel, text, ext) {
   }
 }
 
-function classTokenRegex(token) {
+function classTokenRegex(token: string): RegExp {
   // Matches a class token base after optional variants and optional leading important marker.
   const escaped = escapeRegExp(token);
   return new RegExp(
@@ -742,11 +860,11 @@ function classTokenRegex(token) {
   );
 }
 
-function escapeRegExp(value) {
+function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function isCssLike(ext) {
+function isCssLike(ext: string): boolean {
   return [
     ".css",
     ".pcss",
@@ -761,26 +879,36 @@ function isCssLike(ext) {
   ].includes(ext);
 }
 
-function lineOf(text, regex) {
-  const re = new RegExp(regex.source, regex.flags.replace("g", ""));
+function lineOf(text: string, regex: RegExp): number {
+  const re = new RegExp(regex.source, regex.flags.replaceAll("g", ""));
   const match = re.exec(text);
   if (!match) return 0;
   return text.slice(0, match.index).split(/\r?\n/).length;
 }
 
-function addFinding(severity, rule, file, line, message, recommendation) {
+function addFinding(
+  severity: Severity,
+  rule: string,
+  file: string,
+  line: number,
+  message: string,
+  recommendation: string,
+): void {
   findings.push({ severity, rule, file, line, message, recommendation });
 }
 
-function countBy(items, key) {
-  const out = {};
-  for (const item of items) out[item[key]] = (out[item[key]] || 0) + 1;
+function countBy(
+  items: Finding[],
+  key: "severity" | "rule",
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const item of items) out[item[key]] = (out[item[key]] ?? 0) + 1;
   return out;
 }
 
-function renderMarkdown(output, maxSamples) {
+function renderMarkdown(output: AuditOutput, maxSamples: number): string {
   const { stats, countsBySeverity, countsByRule, findings } = output;
-  const lines = [];
+  const lines: string[] = [];
   lines.push("# Tailwind CSS v3 → v4 migration audit");
   lines.push("");
   lines.push(`Generated: ${output.generatedAt}`);
@@ -794,7 +922,7 @@ function renderMarkdown(output, maxSamples) {
   lines.push("## Summary");
   lines.push("");
   for (const severity of ["action", "review", "info"]) {
-    lines.push(`- ${severity}: ${countsBySeverity[severity] || 0}`);
+    lines.push(`- ${severity}: ${countsBySeverity[severity] ?? 0}`);
   }
   lines.push("");
   if (findings.length === 0) {
@@ -805,21 +933,26 @@ function renderMarkdown(output, maxSamples) {
   }
   lines.push("## Findings by rule");
   lines.push("");
-  for (const [rule, count] of Object.entries(countsByRule).sort(
-    (a, b) => Number(b[1]) - Number(a[1]),
-  )) {
-    lines.push(`- ${rule}: ${String(count)}`);
+  for (
+    const [rule, count] of Object.entries(countsByRule).sort(
+      (a, b) => b[1] - a[1],
+    )
+  ) {
+    lines.push(`- ${rule}: ${count}`);
   }
   lines.push("");
   lines.push("## Details");
   lines.push("");
   const grouped = groupBy(findings, "rule");
-  for (const [rule, group] of Object.entries(grouped).sort(
-    (a, b) =>
-      severityRank(b[1][0].severity) - severityRank(a[1][0].severity) ||
-      a[0].localeCompare(b[0]),
-  )) {
+  for (
+    const [rule, group] of Object.entries(grouped).sort(
+      (a, b) =>
+        severityRank(b[1][0]?.severity) - severityRank(a[1][0]?.severity) ||
+        a[0].localeCompare(b[0]),
+    )
+  ) {
     const first = group[0];
+    if (!first) continue;
     lines.push(`### ${rule} (${group.length})`);
     lines.push("");
     lines.push(`Severity: **${first.severity}**`);
@@ -828,21 +961,58 @@ function renderMarkdown(output, maxSamples) {
     for (const item of group.slice(0, maxSamples)) {
       lines.push(`- \`${item.file}:${item.line || 1}\` — ${item.message}`);
     }
-    if (group.length > maxSamples)
+    if (group.length > maxSamples) {
       lines.push(`- ...and ${group.length - maxSamples} more.`);
+    }
     lines.push("");
   }
   return lines.join("\n");
 }
 
-function groupBy(items, key) {
-  const out = {};
+function groupBy(
+  items: Finding[],
+  key: "severity" | "rule",
+): Record<string, Finding[]> {
+  const out: Record<string, Finding[]> = {};
   for (const item of items) {
-    (out[item[key]] ||= []).push(item);
+    (out[item[key]] ??= []).push(item);
   }
   return out;
 }
 
-function severityRank(severity) {
-  return { action: 3, review: 2, info: 1 }[severity] || 0;
+function severityRank(severity: Severity | undefined): number {
+  if (severity === "action") return 3;
+  if (severity === "review") return 2;
+  if (severity === "info") return 1;
+  return 0;
+}
+
+function asStringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (typeof raw === "string") out[key] = raw;
+  }
+  return out;
+}
+
+function exists(path: string): boolean {
+  try {
+    Deno.statSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isDirectory(path: string): boolean {
+  try {
+    return Deno.statSync(path).isDirectory;
+  } catch {
+    return false;
+  }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

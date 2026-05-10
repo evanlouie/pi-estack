@@ -20,7 +20,7 @@ Use this as the operational checklist after the skill activates.
 From the skill directory:
 
 ```bash
-node scripts/audit_tailwind_v4_migration.mjs --project /path/to/project --format markdown > /path/to/project/tailwind-v4-audit.md
+deno run --allow-read scripts/audit_tailwind_v4_migration.ts --project /path/to/project --format markdown > /path/to/project/tailwind-v4-audit.md
 ```
 
 Use this audit to plan manual work. The script flags likely issues; it is not a substitute for building and viewing the app.
@@ -145,13 +145,13 @@ For safelisting, use statically detectable full class names or `@source inline()
 Dry run:
 
 ```bash
-node scripts/replace_tailwind_v4_renames.mjs --project /path/to/project --dry-run
+deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project /path/to/project --dry-run
 ```
 
 Write mode only on a migration branch:
 
 ```bash
-node scripts/replace_tailwind_v4_renames.mjs --project /path/to/project --write
+deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project /path/to/project --write
 ```
 
 Then review:

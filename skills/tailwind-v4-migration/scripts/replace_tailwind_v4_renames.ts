@@ -1,4 +1,5 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S deno run --allow-read --allow-write
+/// <reference types="deno" />
 /*
   Conservative Tailwind CSS v3 -> v4 class-token rename codemod.
 
@@ -6,9 +7,38 @@
   It only rewrites deterministic class-token changes that do not require design judgment.
 */
 
-import fs from "node:fs";
-import path from "node:path";
-import process from "node:process";
+import { extname, join, relative, resolve, sep } from "node:path";
+
+type ParsedArgs = Record<string, string | boolean>;
+
+type Change = {
+  from: string;
+  to: string;
+  line: number;
+};
+
+type FileReport = {
+  file: string;
+  changes: Change[];
+};
+
+type Report = {
+  projectRoot: string;
+  dryRun: boolean;
+  filesScanned: number;
+  totalChanges: number;
+  fileReports: FileReport[];
+};
+
+type TransformRange = {
+  start: number;
+  end: number;
+};
+
+type TransformResult = {
+  updated: string;
+  changes: Change[];
+};
 
 const EXCLUDED_DIRS = new Set([
   ".git",
@@ -54,7 +84,7 @@ const TEXT_EXTENSIONS = new Set([
   ".styl",
 ]);
 
-const BASE_RENAMES = new Map([
+const BASE_RENAMES = new Map<string, string>([
   ["shadow-sm", "shadow-xs"],
   ["shadow", "shadow-sm"],
   ["drop-shadow-sm", "drop-shadow-xs"],
@@ -76,57 +106,86 @@ const BASE_RENAMES = new Map([
   ["decoration-clone", "box-decoration-clone"],
 ]);
 
-const TOKEN_RE = /[A-Za-z0-9_@!:/[\]().%#,$-]+/g;
+const DISPLAY_UTILITIES = new Set([
+  "absolute",
+  "block",
+  "container",
+  "fixed",
+  "flex",
+  "grid",
+  "hidden",
+  "inline",
+  "inline-block",
+  "relative",
+  "sr-only",
+  "sticky",
+]);
 
-const args = parseArgs(process.argv.slice(2));
-const projectRoot = path.resolve(args.project || process.cwd());
-const write = Boolean(args.write);
-const dryRun = !write || Boolean(args["dry-run"]);
-const maxFileSize = Number(args["max-file-size"] || 1_000_000);
+const TOKEN_RE = /[A-Za-z0-9_@!:/\[\]().%#,$-]+/g;
 
-if (args.help || args.h) {
+const args = parseArgs(Deno.args);
+
+if (hasFlag(args, "help") || hasFlag(args, "h")) {
   printHelp();
-  process.exit(0);
+  Deno.exit(0);
 }
 
-if (!fs.existsSync(projectRoot) || !fs.statSync(projectRoot).isDirectory()) {
+const projectRoot = resolve(stringArg(args, "project", Deno.cwd()));
+const writeRequested = hasFlag(args, "write");
+const dryRun = !writeRequested || hasFlag(args, "dry-run");
+const shouldWrite = writeRequested && !dryRun;
+const maxFileSize = numberArg(args, "max-file-size", 1_000_000, 0);
+
+if (!isDirectory(projectRoot)) {
   console.error(
     `Error: --project must point to an existing directory. Received: ${projectRoot}`,
   );
-  process.exit(2);
+  Deno.exit(2);
 }
 
 const files = walk(projectRoot, maxFileSize);
-const fileReports = [];
+const fileReports: FileReport[] = [];
 let totalChanges = 0;
 
 for (const file of files) {
-  const original = fs.readFileSync(file, "utf8");
+  const original = Deno.readTextFileSync(file);
   const { updated, changes } = transformFile(original);
   if (changes.length) {
     totalChanges += changes.length;
     fileReports.push({
-      file: path.relative(projectRoot, file).replaceAll(path.sep, "/"),
+      file: relative(projectRoot, file).replaceAll(sep, "/"),
       changes,
     });
-    if (write && updated !== original) fs.writeFileSync(file, updated, "utf8");
+    if (shouldWrite && updated !== original) {
+      Deno.writeTextFileSync(file, updated);
+    }
   }
 }
 
 printReport({
   projectRoot,
   dryRun,
-  write,
   filesScanned: files.length,
   totalChanges,
   fileReports,
 });
 
-function parseArgs(argv) {
-  const out = {};
+function parseArgs(argv: string[]): ParsedArgs {
+  const out: ParsedArgs = {};
   for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
+    const arg = argv[i] ?? "";
+    if (arg === "-h") {
+      out["h"] = true;
+      continue;
+    }
     if (!arg.startsWith("--")) continue;
+
+    const equalsIndex = arg.indexOf("=");
+    if (equalsIndex >= 0) {
+      out[arg.slice(2, equalsIndex)] = arg.slice(equalsIndex + 1);
+      continue;
+    }
+
     const key = arg.slice(2);
     const next = argv[i + 1];
     if (!next || next.startsWith("--")) {
@@ -139,8 +198,47 @@ function parseArgs(argv) {
   return out;
 }
 
-function printHelp() {
-  console.log(`Usage: node scripts/replace_tailwind_v4_renames.mjs [OPTIONS]
+function hasFlag(parsedArgs: ParsedArgs, key: string): boolean {
+  return parsedArgs[key] === true;
+}
+
+function stringArg(
+  parsedArgs: ParsedArgs,
+  key: string,
+  defaultValue: string,
+): string {
+  const value = parsedArgs[key];
+  if (value === undefined) return defaultValue;
+  if (typeof value !== "string") {
+    console.error(`Error: --${key} requires a value.`);
+    Deno.exit(2);
+  }
+  return value;
+}
+
+function numberArg(
+  parsedArgs: ParsedArgs,
+  key: string,
+  defaultValue: number,
+  minimum: number,
+): number {
+  const value = parsedArgs[key];
+  if (value === undefined) return defaultValue;
+  if (typeof value !== "string") {
+    console.error(`Error: --${key} requires a numeric value.`);
+    Deno.exit(2);
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < minimum) {
+    console.error(`Error: --${key} must be a number >= ${minimum}.`);
+    Deno.exit(2);
+  }
+  return number;
+}
+
+function printHelp(): void {
+  console.log(
+    `Usage: deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts [OPTIONS]
 
 Conservatively rewrites deterministic Tailwind v3 class tokens to v4 equivalents.
 Runs as a dry run unless --write is provided.
@@ -153,48 +251,56 @@ Options:
   --help                Show this help
 
 Examples:
-  node scripts/replace_tailwind_v4_renames.mjs --project ~/app --dry-run
-  node scripts/replace_tailwind_v4_renames.mjs --project ~/app --write
+  deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project ~/app --dry-run
+  deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project ~/app --write
 
 Important:
   This script does not rewrite opacity utilities like bg-opacity-50 because those
-  require knowing the paired color utility. Run the audit script for manual items.`);
+  require knowing the paired color utility. Run the audit script for manual items.`,
+  );
 }
 
-function walk(root, maxBytes) {
-  const results = [];
+function walk(root: string, maxBytes: number): string[] {
+  const results: string[] = [];
   const stack = [root];
+
   while (stack.length) {
     const current = stack.pop();
-    let entries;
+    if (current === undefined) break;
+
+    let entries: Deno.DirEntry[];
     try {
-      entries = fs.readdirSync(current, { withFileTypes: true });
+      entries = [...Deno.readDirSync(current)];
     } catch {
       continue;
     }
+
     for (const entry of entries) {
-      const full = path.join(current, entry.name);
-      if (entry.isDirectory()) {
+      const full = join(current, entry.name);
+      if (entry.isDirectory) {
         if (!EXCLUDED_DIRS.has(entry.name)) stack.push(full);
         continue;
       }
-      if (!entry.isFile()) continue;
-      const ext = path.extname(entry.name).toLowerCase();
+      if (!entry.isFile) continue;
+
+      const ext = extname(entry.name).toLowerCase();
       if (!TEXT_EXTENSIONS.has(ext)) continue;
+
       let size = 0;
       try {
-        size = fs.statSync(full).size;
+        size = Deno.statSync(full).size;
       } catch {
         continue;
       }
       if (size <= maxBytes) results.push(full);
     }
   }
+
   return results.sort((a, b) => a.localeCompare(b));
 }
 
-function transformFile(text) {
-  const changes = [];
+function transformFile(text: string): TransformResult {
+  const changes: Change[] = [];
   const ranges = collectTransformRanges(text);
   if (ranges.length === 0) return { updated: text, changes };
 
@@ -211,23 +317,26 @@ function transformFile(text) {
   updated += text.slice(cursor);
   return { updated, changes };
 
-  function transformSegment(segment, baseOffset) {
-    return segment.replace(TOKEN_RE, (token, offset) => {
-      const next = transformToken(token);
-      if (next !== token) {
-        changes.push({
-          from: token,
-          to: next,
-          line: lineAt(text, baseOffset + offset),
-        });
-      }
-      return next;
-    });
+  function transformSegment(segment: string, baseOffset: number): string {
+    return segment.replace(
+      TOKEN_RE,
+      (token: string, offset: number): string => {
+        const next = transformToken(token);
+        if (next !== token) {
+          changes.push({
+            from: token,
+            to: next,
+            line: lineAt(text, baseOffset + offset),
+          });
+        }
+        return next;
+      },
+    );
   }
 }
 
-function collectTransformRanges(text) {
-  const ranges = [];
+function collectTransformRanges(text: string): TransformRange[] {
+  const ranges: TransformRange[] = [];
 
   // Transform string literal contents, where class lists usually live in JSX,
   // templates, JSON, HTML attributes, and framework component files. Skip
@@ -262,12 +371,12 @@ function collectTransformRanges(text) {
 
   // Transform tokens inside CSS @apply declarations, which are not quoted.
   const applyRegex = /@apply\s+([^;]+);/g;
-  let match;
-  while ((match = applyRegex.exec(text))) {
-    addRange(
-      match.index + match[0].indexOf(match[1]),
-      match.index + match[0].indexOf(match[1]) + match[1].length,
-    );
+  let match: RegExpExecArray | null;
+  while ((match = applyRegex.exec(text)) !== null) {
+    const appliedClasses = match[1] ?? "";
+    if (!appliedClasses) continue;
+    const classesStart = match.index + match[0].indexOf(appliedClasses);
+    addRange(classesStart, classesStart + appliedClasses.length);
   }
 
   return ranges
@@ -277,26 +386,27 @@ function collectTransformRanges(text) {
       return !previous || range.start >= previous.end;
     });
 
-  function addRange(start, end) {
+  function addRange(start: number, end: number): void {
     if (start < end) ranges.push({ start, end });
   }
 }
 
-function isLikelyRegexStart(text, index) {
+function isLikelyRegexStart(text: string, index: number): boolean {
   const next = text[index + 1];
   if (next === "/" || next === "*") return false;
   const prev = previousNonWhitespace(text, index - 1);
   return prev === "" || "([{=,:;!&|?".includes(prev);
 }
 
-function previousNonWhitespace(text, index) {
+function previousNonWhitespace(text: string, index: number): string {
   for (let i = index; i >= 0; i--) {
-    if (!/\s/.test(text[i])) return text[i];
+    const char = text[i] ?? "";
+    if (!/\s/.test(char)) return char;
   }
   return "";
 }
 
-function skipRegexLiteral(text, start) {
+function skipRegexLiteral(text: string, start: number): number {
   let escaped = false;
   let inCharacterClass = false;
   for (let i = start + 1; i < text.length; i++) {
@@ -310,14 +420,14 @@ function skipRegexLiteral(text, start) {
     } else if (char === "]") {
       inCharacterClass = false;
     } else if (char === "/" && !inCharacterClass) {
-      while (/[a-z]/i.test(text[i + 1] || "")) i++;
+      while (/[a-z]/i.test(text[i + 1] ?? "")) i++;
       return i;
     }
   }
   return start;
 }
 
-function transformToken(token) {
+function transformToken(token: string): string {
   let transformed = token;
 
   // v4 arbitrary variable shorthand: bg-[--brand-color] -> bg-(--brand-color)
@@ -335,26 +445,26 @@ function transformToken(token) {
   return transformed;
 }
 
-function moveImportantMarker(token) {
+function moveImportantMarker(token: string): string {
   const hadTrailingImportant = token.endsWith("!");
   if (hadTrailingImportant) return token;
 
   const parts = splitVariants(token);
-  const base = parts.pop() || "";
+  const base = parts.pop() ?? "";
   if (base.startsWith("!") && base.length > 1) {
     const unimportantBase = base.slice(1);
     if (!isLikelyTailwindClass(unimportantBase)) return token;
-    parts.push(unimportantBase + "!");
+    parts.push(`${unimportantBase}!`);
     return parts.join(":");
   }
   return token;
 }
 
-function rewriteBaseUtility(token) {
+function rewriteBaseUtility(token: string): string {
   const important = token.endsWith("!");
   const coreToken = important ? token.slice(0, -1) : token;
   const parts = splitVariants(coreToken);
-  const base = parts.pop() || "";
+  const base = parts.pop() ?? "";
 
   const negative = base.startsWith("-");
   const normalizedBase = negative ? base.slice(1) : base;
@@ -366,27 +476,14 @@ function rewriteBaseUtility(token) {
   return parts.join(":");
 }
 
-function isLikelyTailwindClass(base) {
+function isLikelyTailwindClass(base: string): boolean {
   if (!base || !/^[A-Za-z0-9_@-]/.test(base)) return false;
   if (BASE_RENAMES.has(base.replace(/^-/, ""))) return true;
   if (/[-/]/.test(base)) return true;
-  return new Set([
-    "absolute",
-    "block",
-    "container",
-    "fixed",
-    "flex",
-    "grid",
-    "hidden",
-    "inline",
-    "inline-block",
-    "relative",
-    "sr-only",
-    "sticky",
-  ]).has(base);
+  return DISPLAY_UTILITIES.has(base);
 }
 
-function splitVariants(token) {
+function splitVariants(token: string): string[] {
   // Tailwind class variants use ':'; this simple splitter is sufficient for the
   // deterministic tokens this codemod rewrites. It intentionally ignores tokens
   // with bracketed arbitrary variants containing ':' to avoid risky rewrites.
@@ -394,19 +491,23 @@ function splitVariants(token) {
   return token.split(":");
 }
 
-function lineAt(text, offset) {
+function lineAt(text: string, offset: number): number {
   return text.slice(0, offset).split(/\r?\n/).length;
 }
 
-function printReport(report) {
+function printReport(report: Report): void {
   console.log(
-    `# Tailwind v4 deterministic rename ${report.dryRun ? "dry run" : "write run"}`,
+    `# Tailwind v4 deterministic rename ${
+      report.dryRun ? "dry run" : "write run"
+    }`,
   );
   console.log("");
   console.log(`Project: ${report.projectRoot}`);
   console.log(`Files scanned: ${report.filesScanned}`);
   console.log(
-    `Token changes ${report.dryRun ? "that would be made" : "made"}: ${report.totalChanges}`,
+    `Token changes ${
+      report.dryRun ? "that would be made" : "made"
+    }: ${report.totalChanges}`,
   );
   console.log("");
   if (report.totalChanges === 0) {
@@ -423,7 +524,9 @@ function printReport(report) {
     }
     if (fileReport.changes.length > shown.length) {
       console.log(
-        `- ...and ${fileReport.changes.length - shown.length} more in this file.`,
+        `- ...and ${
+          fileReport.changes.length - shown.length
+        } more in this file.`,
       );
     }
     console.log("");
@@ -436,5 +539,13 @@ function printReport(report) {
     console.log(
       "Changes written. Review with git diff and run the project build.",
     );
+  }
+}
+
+function isDirectory(path: string): boolean {
+  try {
+    return Deno.statSync(path).isDirectory;
+  } catch {
+    return false;
   }
 }

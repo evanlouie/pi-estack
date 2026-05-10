@@ -1,7 +1,5 @@
 #!/usr/bin/env -S deno run --allow-read
 /// <reference types="deno" />
-/// <reference types="node" />
-/// <reference lib="dom" />
 // Self-contained Deno TypeScript script. No package manifest or external packages needed.
 
 import { basename, extname, join, relative, resolve } from "node:path";
