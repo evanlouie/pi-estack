@@ -2,8 +2,8 @@
 name: agent-skills
 description: >-
   Use this skill when creating, reviewing, updating, maintaining, or optimizing
-  generic Agent Skills, including SKILL.md frontmatter, discovery,
-  descriptions, evals, references, assets, and scripts.
+  Agent Skills, including SKILL.md frontmatter, discovery, descriptions,
+  evals, references, assets, and bundled scripts.
 ---
 
 # Agent Skills
@@ -12,15 +12,18 @@ Use this guidance for work on generic Agent Skills that can be used across compa
 
 ## Required reading
 
-Before creating or changing a skill, read the relevant current Agent Skills docs:
+Before creating, reviewing, updating, or otherwise touching a skill in this repository, read the Agent Skills docs index and every linked doc. Use the index to discover the current docs before relying on cached knowledge. The current docs include:
 
-- <https://agentskills.io/specification>
-- <https://agentskills.io/skill-creation/best-practices>
-- <https://agentskills.io/skill-creation/optimizing-descriptions>
-- <https://agentskills.io/skill-creation/evaluating-skills>
-- <https://agentskills.io/skill-creation/using-scripts>
-
-Read <https://agentskills.io/skill-creation/quickstart> when creating a skill from scratch.
+- <https://agentskills.io/llms.txt>
+- <https://agentskills.io/home.md>
+- <https://agentskills.io/skill-creation/quickstart.md>
+- <https://agentskills.io/specification.md>
+- <https://agentskills.io/skill-creation/best-practices.md>
+- <https://agentskills.io/skill-creation/optimizing-descriptions.md>
+- <https://agentskills.io/skill-creation/evaluating-skills.md>
+- <https://agentskills.io/skill-creation/using-scripts.md>
+- <https://agentskills.io/client-implementation/adding-skills-support.md>
+- <https://agentskills.io/clients.md>
 
 ## Review checklist
 
@@ -44,12 +47,13 @@ Read <https://agentskills.io/skill-creation/quickstart> when creating a skill fr
 
 4. **Supporting files**
    - If README, evals, references, assets, or scripts exist, confirm they agree with `SKILL.md` and with each other.
-   - For `evals/evals.json`, confirm `skill_name` matches the skill `name` and every listed file path exists relative to the skill root.
+   - For an evals manifest, confirm `skill_name` matches the skill `name` and every listed file path exists relative to the skill root.
    - Check internal Markdown links and relative file references for broken targets.
 
 5. **Scripts**
    - Put reusable helpers in `scripts/` and reference them with relative paths.
-   - Prefer self-contained scripts with inline dependencies when practical; pin dependency versions.
+   - In this repository, skill scripts must be self-contained and written either in Python run with `uv` using PEP 723 inline metadata, or in TypeScript run with Deno. Convert, remove, or rewrite Bash, Node, Bun, Ruby, or other script types before accepting them.
+   - Pin dependency versions where practical.
    - Scripts should avoid interactive prompts, provide useful `--help`, print actionable errors, use meaningful exit codes, and separate structured stdout from diagnostic stderr.
    - For destructive or stateful actions, require explicit flags and offer dry-run behavior when practical.
 

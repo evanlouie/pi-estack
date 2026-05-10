@@ -1,5 +1,4 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write
-/// <reference types="deno" />
 /*
   Conservative Tailwind CSS v3 -> v4 class-token rename codemod.
 
@@ -8,6 +7,32 @@
 */
 
 import { extname, join, relative, resolve, sep } from "node:path";
+
+type DenoDirEntry = {
+  name: string;
+  isFile: boolean;
+  isDirectory: boolean;
+};
+
+type DenoFileInfo = {
+  size: number;
+  isDirectory: boolean;
+};
+
+declare const Deno: {
+  args: string[];
+  cwd(): string;
+  exit(code?: number): never;
+  readTextFileSync(path: string): string;
+  writeTextFileSync(path: string, data: string): void;
+  readDirSync(path: string): Iterable<DenoDirEntry>;
+  statSync(path: string): DenoFileInfo;
+};
+
+declare const console: {
+  error(...data: unknown[]): void;
+  log(...data: unknown[]): void;
+};
 
 type ParsedArgs = Record<string, string | boolean>;
 
@@ -268,7 +293,7 @@ function walk(root: string, maxBytes: number): string[] {
     const current = stack.pop();
     if (current === undefined) break;
 
-    let entries: Deno.DirEntry[];
+    let entries: DenoDirEntry[];
     try {
       entries = [...Deno.readDirSync(current)];
     } catch {

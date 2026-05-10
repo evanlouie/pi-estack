@@ -146,7 +146,7 @@ Read these files when the task needs more detail:
 
 ## Gotchas
 
-- `impersonate="chrome"` adds browser-like default headers. Override individual headers with `headers=...`, disable them with `default_headers=False`, or edit a loaded fingerprint when exact header control/order matters.
+- `impersonate="chrome"` adds browser-like default headers. Override individual headers with `headers=...`, or disable them with `default_headers=False` and pass explicit headers when exact header content/order matters.
 - `files=` is not supported in the requests-like API; use `CurlMime` and `multipart=`.
 - For multiple requests, prefer `Session` so cookies and connections are reused. `response.cookies` only covers the current response; use `session.cookies` for accumulated cookies.
 - `stream=True` is compatible with iterative APIs, but the response begins streaming immediately; consume it immediately or use `content_callback` to avoid memory growth.

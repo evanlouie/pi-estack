@@ -2,6 +2,13 @@
 /// <reference types="deno" />
 // Self-contained Deno TypeScript script. No package manifest or external packages needed.
 
+type Console = {
+  log(...data: unknown[]): void;
+  error(...data: unknown[]): void;
+};
+
+declare const console: Console;
+
 import { basename, extname, join, relative, resolve } from "node:path";
 
 type Severity = "info" | "warning" | "error";
@@ -20,26 +27,52 @@ type Summary = {
   findings: Finding[];
 };
 
-const argv = Deno.args;
-const json = argv.includes("--json");
-const help = argv.includes("--help") || argv.includes("-h");
-const positional = argv.filter((arg: string) => !arg.startsWith("--"));
-
-if (help) {
-  console.log(
-    `Usage: deno run --allow-read scripts/audit-tailwind-v4.ts [project-dir] [--json]
+const usage =
+  `Usage: deno run --allow-read scripts/audit-tailwind-v4.ts [--json] [--] [project-dir]
 
 Non-destructively scans a project for common Tailwind CSS v4 setup and migration issues.
 
 Options:
   --json    Print machine-readable JSON
+  --        Treat the remaining argument as project-dir, even if it starts with -
   --help    Show this help message
 
 Examples:
   deno run --allow-read scripts/audit-tailwind-v4.ts .
-  deno run --allow-read scripts/audit-tailwind-v4.ts /path/to/project --json`,
-  );
+  deno run --allow-read scripts/audit-tailwind-v4.ts /path/to/project --json`;
+
+function failUsage(message: string): never {
+  console.error(`Error: ${message}`);
+  console.error("");
+  console.error(usage);
+  Deno.exit(2);
+}
+
+const help = Deno.args.includes("--help") || Deno.args.includes("-h");
+
+if (help) {
+  console.log(usage);
   Deno.exit(0);
+}
+
+const allowedFlags = new Set(["--json"]);
+const positional: string[] = [];
+let json = false;
+let endOfOptions = false;
+
+for (const arg of Deno.args) {
+  if (!endOfOptions && arg === "--") {
+    endOfOptions = true;
+  } else if (!endOfOptions && arg.startsWith("-")) {
+    if (!allowedFlags.has(arg)) failUsage(`unknown option: ${arg}`);
+    if (arg === "--json") json = true;
+  } else {
+    positional.push(arg);
+  }
+}
+
+if (positional.length > 1) {
+  failUsage(`expected at most one project-dir, received ${positional.length}`);
 }
 
 const root = resolve(positional[0] || Deno.cwd());

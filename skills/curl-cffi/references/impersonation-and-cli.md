@@ -18,11 +18,13 @@ Pin a specific target only when reproducibility matters:
 requests.get(url, impersonate="chrome124")
 ```
 
-Do not invent target names. To inspect available targets on the user’s machine:
+Do not invent target names. The current open-source CLI does not provide an alias-listing subcommand. For `curl_cffi` 0.15, inspect aliases and exact enum targets from the installed package with:
 
 ```bash
-curl-cffi list
+python -c "from curl_cffi.requests.impersonate import BrowserType, REAL_TARGET_MAP; print('aliases:', ', '.join(sorted(REAL_TARGET_MAP))); print('targets:', ', '.join(t.value for t in BrowserType))"
 ```
+
+`REAL_TARGET_MAP` is a current package symbol rather than a stable CLI surface. If this import fails in a future release, check the installed package version and use its documented impersonation target list instead of guessing.
 
 ## Default browser headers
 
@@ -38,14 +40,15 @@ r = requests.get(url, impersonate="chrome", headers={"Accept-Language": "en-US,e
 r = requests.get(url, impersonate="chrome", default_headers=False, headers={"User-Agent": "..."})
 ```
 
-For stored fingerprint targets, load an editable fingerprint object. Choose an exact target shown by `curl-cffi list` rather than inventing a name:
+If exact header content or order matters, do not rely on non-existent fingerprint-object helpers such as `curl_cffi.get_fingerprint`. In current open-source releases, disable browser default headers and pass the headers you want explicitly:
 
 ```python
-import curl_cffi
-
-fp = curl_cffi.get_fingerprint("edge_146_macos_26")
-fp.headers["User-Agent"] = "..."
-r = curl_cffi.get("https://example.com", impersonate=fp)
+headers = {
+    "User-Agent": "...",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+r = requests.get(url, impersonate="chrome", default_headers=False, headers=headers)
 ```
 
 ## Custom fingerprints
@@ -65,24 +68,7 @@ Use this only when the user provides known-good values or the task is an authori
 
 ## Fingerprint updates
 
-The open-source package receives new fingerprints in package releases. Newer versions can also update fingerprints via the CLI or Python APIs when configured:
-
-```bash
-curl-cffi update
-```
-
-```python
-from curl_cffi.fingerprints import FingerprintManager
-
-updated = FingerprintManager.update_fingerprints()
-```
-
-If an API key is needed, avoid hard-coding it. Prefer environment variables or user-level config:
-
-```bash
-export IMPERSONATE_API_KEY=imp_xxxxxxxx
-curl-cffi update
-```
+The open-source package receives new fingerprints in package releases. To get newer bundled targets, upgrade `curl_cffi` and then re-check the installed aliases/targets. Do not suggest package-local fingerprint update/list commands or a `curl_cffi.fingerprints.FingerprintManager` API for current open-source releases; those interfaces are not available in `curl_cffi` 0.15.
 
 ## Limits of impersonation
 

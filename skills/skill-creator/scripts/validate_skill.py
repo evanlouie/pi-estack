@@ -33,6 +33,17 @@ KNOWN_FIELDS = {
 PATH_RE = re.compile(
     r"(?<![\w.-])((?:scripts|references|assets|evals)/[A-Za-z0-9_./*{}-]+(?:\.[A-Za-z0-9]+)?)"
 )
+DENO_SPECIFIER_RE = re.compile(r"[\"']((?:npm|jsr):[^\"']+)[\"']")
+DENO_SHEBANG_RE = re.compile(r"^#!.*\bdeno\s+run\b")
+ALLOWED_SCRIPT_SUPPORT_EXTENSIONS = {".json", ".lock", ".md", ".txt", ".toml"}
+UNSUPPORTED_SCRIPT_EXTENSIONS = {
+    ".bash": "Bash",
+    ".cjs": "Node.js/CommonJS",
+    ".js": "Node.js/Bun JavaScript",
+    ".mjs": "Node.js ES module",
+    ".rb": "Ruby",
+    ".sh": "shell",
+}
 
 
 @dataclass
@@ -334,6 +345,24 @@ def python_calls_input(text: str) -> bool:
     return False
 
 
+def deno_specifier_has_version(specifier: str) -> bool:
+    """Return whether an npm:/jsr: specifier uses a reproducible version."""
+    package = specifier.split(":", 1)[1]
+    version_marker = (
+        package.find("@", 1) if package.startswith("@") else package.find("@")
+    )
+    if version_marker == -1:
+        return False
+    version = package[version_marker + 1 :].strip()
+    if not version or version.lower() == "latest" or "*" in version:
+        return False
+    return bool(
+        re.match(
+            r"^(?:\^|~|>=?|<=?)?\d+(?:\.\d+){0,2}(?:[-+][0-9A-Za-z.-]+)?$", version
+        )
+    )
+
+
 def validate_body(body: str, skill_dir: Path, issues: list[Issue]) -> None:
     if not body.strip():
         add_issue(
@@ -404,9 +433,9 @@ def validate_scripts(skill_dir: Path, issues: list[Issue]) -> None:
             if "# /// script" not in "\n".join(text.splitlines()[:20]):
                 add_issue(
                     issues,
-                    "warning",
+                    "error",
                     "python-script-missing-pep723",
-                    f"Python script `{rel}` lacks PEP 723 metadata",
+                    f"Python script `{rel}` lacks PEP 723 metadata required for `uv run`",
                     rel,
                 )
             if python_calls_input(text):
@@ -427,14 +456,42 @@ def validate_scripts(skill_dir: Path, issues: list[Issue]) -> None:
                 )
         elif script.suffix == ".ts":
             first_line = text.splitlines()[0] if text.splitlines() else ""
-            if "deno" not in first_line:
+            if not DENO_SHEBANG_RE.match(first_line):
                 add_issue(
                     issues,
-                    "warning",
+                    "error",
                     "typescript-script-not-deno",
-                    f"TypeScript script `{rel}` should use a Deno shebang",
+                    f"TypeScript script `{rel}` must start with a Deno run shebang in this project",
                     rel,
                 )
+            for specifier in sorted(set(DENO_SPECIFIER_RE.findall(text))):
+                if not deno_specifier_has_version(specifier):
+                    add_issue(
+                        issues,
+                        "warning",
+                        "deno-import-not-pinned",
+                        f"Deno dependency `{specifier}` in `{rel}` should pin a package version",
+                        rel,
+                    )
+        elif script.suffix in ALLOWED_SCRIPT_SUPPORT_EXTENSIONS:
+            pass
+        elif script.suffix in UNSUPPORTED_SCRIPT_EXTENSIONS:
+            language = UNSUPPORTED_SCRIPT_EXTENSIONS[script.suffix]
+            add_issue(
+                issues,
+                "error",
+                "unsupported-script-language",
+                f"Script `{rel}` appears to be {language}; this project only allows Python scripts with PEP 723 metadata or TypeScript scripts run with Deno",
+                rel,
+            )
+        else:
+            add_issue(
+                issues,
+                "error",
+                "unsupported-script-language",
+                f"File `{rel}` has unsupported extension `{script.suffix or '<none>'}` in scripts/; keep executable helpers to Python with PEP 723 metadata or TypeScript run with Deno, and move non-script assets to assets/ or references/",
+                rel,
+            )
         if script.suffix != ".py" and ("read -p" in text or "prompt(" in text):
             add_issue(
                 issues,
@@ -459,16 +516,35 @@ def validate_evals(skill_dir: Path, issues: list[Issue]) -> None:
                 )
             else:
                 for idx, item in enumerate(data):
-                    if (
-                        not isinstance(item, dict)
-                        or "query" not in item
-                        or "should_trigger" not in item
-                    ):
+                    if not isinstance(item, dict):
+                        add_issue(
+                            issues,
+                            "error",
+                            "invalid-eval-query",
+                            f"eval_queries[{idx}] must be an object",
+                        )
+                        continue
+                    if "query" not in item or "should_trigger" not in item:
                         add_issue(
                             issues,
                             "error",
                             "invalid-eval-query",
                             f"eval_queries[{idx}] must contain query and should_trigger",
+                        )
+                        continue
+                    if not isinstance(item["query"], str) or not item["query"].strip():
+                        add_issue(
+                            issues,
+                            "error",
+                            "invalid-eval-query-text",
+                            f"eval_queries[{idx}].query must be a non-empty string",
+                        )
+                    if not isinstance(item["should_trigger"], bool):
+                        add_issue(
+                            issues,
+                            "error",
+                            "invalid-eval-query-trigger",
+                            f"eval_queries[{idx}].should_trigger must be true or false",
                         )
         except json.JSONDecodeError as exc:
             add_issue(

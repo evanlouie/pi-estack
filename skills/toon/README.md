@@ -27,19 +27,21 @@ The directory name must remain `toon` because the `name` field in `SKILL.md` mus
 
 ## Script
 
-The bundled script is a self-contained Deno TypeScript wrapper around the pinned official CLI, `npx @toon-format/cli@2.2.0`. It requires Deno plus Node/npm/npx.
+The bundled script is a self-contained Deno TypeScript helper that uses the pinned official package, `npm:@toon-format/toon@2.2.0`. It requires Deno 2.x with npm specifier support and does not require Node/npm/npx. First run may need network access to populate Deno's global cache.
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts --help
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts --help
 ```
+
+The examples use `--node-modules-dir=none` to avoid creating a local `node_modules` directory and `--no-lock` to avoid creating or updating a lockfile in the working tree. Reproducibility relies on the exact `@toon-format/toon@2.2.0` package pin.
 
 Common commands:
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json -o output.toon
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode input.toon -o output.json
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate input.toon
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode input.json -o output.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode input.toon -o output.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts validate input.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
 ```
 
 ## Sources

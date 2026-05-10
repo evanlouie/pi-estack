@@ -1,12 +1,16 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
 """Permissive Open-JSON-UI sanity validator.
 
 This script validates common Open-JSON-UI-style envelopes and catches common
 mistakes. It is not a substitute for the target renderer's authoritative schema.
 
 Usage:
-  python scripts/validate_open_json_ui.py payload.json
-  cat payload.json | python scripts/validate_open_json_ui.py -
+  uv run scripts/validate_open_json_ui.py payload.json
+  uv run scripts/validate_open_json_ui.py - < payload.json
 """
 
 from __future__ import annotations

@@ -17,7 +17,7 @@ VALID_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SKILL_TEMPLATE = """---
 name: {name}
 description: >
-  {description}
+{description_block}
 metadata:
   version: "0.1.0"
 ---
@@ -54,6 +54,7 @@ Before finalizing, verify:
 ## Gotchas
 
 - Replace this placeholder with non-obvious domain or project details the agent would otherwise miss.
+{optional_sections}
 """
 
 REFERENCE_README = """# References
@@ -132,8 +133,20 @@ def title_from_name(name: str) -> str:
     return " ".join(part.capitalize() for part in name.split("-"))
 
 
+def yaml_block(value: str, indent: int = 2) -> str:
+    """Format text as an indented YAML block scalar body."""
+    normalized = value.strip()
+    prefix = " " * indent
+    if not normalized:
+        return prefix
+    return "\n".join(
+        prefix + line.rstrip() if line.strip() else prefix
+        for line in normalized.splitlines()
+    )
+
+
 def sentence_fragment(description: str) -> str:
-    text = description.strip().rstrip(".")
+    text = " ".join(description.strip().rstrip(".").split())
     if text.lower().startswith("use this skill when "):
         text = text[20:]
     return text[:1].lower() + text[1:]
@@ -141,14 +154,31 @@ def sentence_fragment(description: str) -> str:
 
 def validate_name(name: str) -> None:
     if not VALID_NAME_RE.match(name):
-        raise ValueError("Skill name must use lowercase letters, numbers, and single hyphens only")
+        raise ValueError(
+            "Skill name must use lowercase letters, numbers, and single hyphens only"
+        )
     if len(name) > 64:
         raise ValueError("Skill name must be 64 characters or fewer")
 
 
+def build_optional_sections(args: argparse.Namespace) -> str:
+    sections: list[str] = []
+    if args.with_scripts:
+        sections.append(
+            """## Available scripts
+
+- `scripts/example.py` — Example helper script created by the scaffolder. Replace it with real reusable logic before relying on it.
+
+Run it from the skill root with `uv run scripts/example.py VALUE`."""
+        )
+    return "\n\n" + "\n\n".join(sections) if sections else ""
+
+
 def write_file(path: Path, content: str, force: bool) -> None:
     if path.exists() and not force:
-        raise FileExistsError(f"Refusing to overwrite existing file: {path}. Use --force to overwrite.")
+        raise FileExistsError(
+            f"Refusing to overwrite existing file: {path}. Use --force to overwrite."
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
@@ -162,14 +192,18 @@ def scaffold(args: argparse.Namespace) -> Path:
 
     root = Path(args.output).expanduser().resolve() / args.name
     if root.exists() and any(root.iterdir()) and not args.force:
-        raise FileExistsError(f"Directory already exists and is not empty: {root}. Use --force to overwrite files.")
+        raise FileExistsError(
+            f"Directory already exists and is not empty: {root}. Use --force to overwrite files."
+        )
     root.mkdir(parents=True, exist_ok=True)
 
+    description = args.description.strip()
     skill_md = SKILL_TEMPLATE.format(
         name=args.name,
         title=title_from_name(args.name),
-        description=args.description.strip(),
-        when_to_use=sentence_fragment(args.description),
+        description_block=yaml_block(description),
+        when_to_use=sentence_fragment(description),
+        optional_sections=build_optional_sections(args),
     )
     write_file(root / "SKILL.md", skill_md, args.force)
 
@@ -186,7 +220,9 @@ def scaffold(args: argparse.Namespace) -> Path:
             pass
     if args.with_evals:
         write_file(root / "evals" / "eval_queries.json", EVAL_QUERIES, args.force)
-        write_file(root / "evals" / "evals.json", EVALS_JSON.format(name=args.name), args.force)
+        write_file(
+            root / "evals" / "evals.json", EVALS_JSON.format(name=args.name), args.force
+        )
 
     return root
 
@@ -197,13 +233,35 @@ def main(argv: list[str] | None = None) -> int:
         epilog="Example: uv run scripts/scaffold_skill.py invoice-review --description 'Use this skill when reviewing invoice PDFs for missing fields.' --output .agents/skills --with-evals",
     )
     parser.add_argument("name", help="Skill name, e.g. invoice-review")
-    parser.add_argument("--description", required=True, help="Trigger description for SKILL.md, max 1024 characters")
-    parser.add_argument("--output", default=".", help="Directory that will contain the new skill directory (default: current directory)")
-    parser.add_argument("--with-scripts", action="store_true", help="Create scripts/example.py")
-    parser.add_argument("--with-references", action="store_true", help="Create references/README.md")
-    parser.add_argument("--with-assets", action="store_true", help="Create assets/README.md")
-    parser.add_argument("--with-evals", action="store_true", help="Create evals/eval_queries.json and evals/evals.json")
-    parser.add_argument("--force", action="store_true", help="Overwrite scaffolded files if they already exist")
+    parser.add_argument(
+        "--description",
+        required=True,
+        help="Trigger description for SKILL.md, max 1024 characters",
+    )
+    parser.add_argument(
+        "--output",
+        default=".",
+        help="Directory that will contain the new skill directory (default: current directory)",
+    )
+    parser.add_argument(
+        "--with-scripts", action="store_true", help="Create scripts/example.py"
+    )
+    parser.add_argument(
+        "--with-references", action="store_true", help="Create references/README.md"
+    )
+    parser.add_argument(
+        "--with-assets", action="store_true", help="Create assets/README.md"
+    )
+    parser.add_argument(
+        "--with-evals",
+        action="store_true",
+        help="Create evals/eval_queries.json and evals/evals.json",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite scaffolded files if they already exist",
+    )
     args = parser.parse_args(argv)
 
     try:

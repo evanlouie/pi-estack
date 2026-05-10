@@ -1,5 +1,4 @@
 #!/usr/bin/env -S deno run --allow-read
-/// <reference types="deno" />
 /*
   Tailwind CSS v3 -> v4 migration audit.
   Scans a target project and reports likely manual migration work.
@@ -7,6 +6,31 @@
 */
 
 import { basename, extname, join, relative, resolve, sep } from "node:path";
+
+type DenoDirEntry = {
+  name: string;
+  isFile: boolean;
+  isDirectory: boolean;
+};
+
+type DenoFileInfo = {
+  size: number;
+  isDirectory: boolean;
+};
+
+declare const Deno: {
+  args: string[];
+  cwd(): string;
+  exit(code?: number): never;
+  readTextFileSync(path: string): string;
+  readDirSync(path: string): Iterable<DenoDirEntry>;
+  statSync(path: string): DenoFileInfo;
+};
+
+declare const console: {
+  error(...data: unknown[]): void;
+  log(...data: unknown[]): void;
+};
 
 type Severity = "action" | "review" | "info";
 type OutputFormat = "markdown" | "md" | "json";
@@ -361,7 +385,7 @@ function walk(root: string, maxBytes: number): string[] {
     const current = stack.pop();
     if (current === undefined) break;
 
-    let entries: Deno.DirEntry[];
+    let entries: DenoDirEntry[];
     try {
       entries = [...Deno.readDirSync(current)];
     } catch {

@@ -75,7 +75,7 @@ Use this checklist before returning A2UI JSON/JSONL or before approving an exist
 Run:
 
 ```bash
-python3 scripts/validate_a2ui.py <payload-file> --format text
+uv run scripts/validate_a2ui.py <payload-file> --format text
 ```
 
 Interpretation:

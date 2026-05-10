@@ -2,7 +2,7 @@
 name: open-json-ui
 description: Use this skill when generating, reviewing, validating, or adapting Open-JSON-UI declarative generative UI payloads for agent-produced interfaces, including cards, screens, lists, forms, charts, tables, AG-UI-carried UI specs, and renderer-ready JSON component descriptions.
 license: MIT
-compatibility: Requires a skills-compatible agent. Optional validation script uses Python 3.10+ with no third-party dependencies.
+compatibility: Requires a skills-compatible agent. Optional validation script uses uv and Python 3.10+ with no third-party dependencies.
 ---
 
 # Open-JSON-UI
@@ -18,7 +18,7 @@ Use this skill to produce or review Open-JSON-UI payloads: structured JSON UI de
    - `type: "open-json-ui"` wrapper when the host expects an explicit Open-JSON-UI envelope.
    - AG-UI `STATE_DELTA` carrier only when the user asks to embed the UI spec in AG-UI events.
 3. **Generate minimal, renderable JSON.** Prefer simple top-level fields, short strings, and predictable component types. Do not invent deeply nested layouts unless the renderer requires them.
-4. **Validate before finalizing.** Run `python scripts/validate_open_json_ui.py <file>` when working with a saved JSON file, or use the checklist below for inline payloads.
+4. **Validate before finalizing.** Run `uv run scripts/validate_open_json_ui.py <file>` when working with a saved JSON file, or use the checklist below for inline payloads.
 5. **Explain assumptions.** When no renderer schema is supplied, state which dialect you used and that it is a conservative default.
 
 Read `references/spec-notes.md` when you need more detail about dialects, component conventions, renderer mapping, or edge cases. Read `references/examples.md` when drafting a payload from scratch.
@@ -96,7 +96,7 @@ Before returning or committing a payload, verify:
 Use the bundled script for a quick sanity check:
 
 ```bash
-python scripts/validate_open_json_ui.py payload.json
+uv run scripts/validate_open_json_ui.py payload.json
 ```
 
 The script prints structured JSON with `valid`, `dialect`, `errors`, `warnings`, and a component count. It is intentionally permissive: it catches common mistakes without replacing the project renderer’s authoritative schema.

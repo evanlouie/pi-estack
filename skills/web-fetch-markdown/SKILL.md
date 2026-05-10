@@ -1,6 +1,6 @@
 ---
 name: web-fetch-markdown
-description: Fetch public web pages, PDFs, Office files, feeds, and other remote URLs efficiently, then convert responses into Markdown using curl_cffi and MarkItDown. Use when the user asks to retrieve, scrape, download, summarize from URLs, extract web page text, inspect a small set of links, handle pages that need browser-like TLS fingerprints, or turn web content into Markdown for LLM analysis. Do not use for browser automation, login-gated flows, mass scraping, or bypassing access controls.
+description: Use this skill to fetch a small, specific set of public HTTP(S) web pages, PDFs, Office files, feeds, and documents, then convert responses into Markdown with curl_cffi and MarkItDown. Use when the user asks to retrieve, scrape, download, summarize from URLs, extract web page text, inspect a small set of links, handle pages that need browser-like TLS fingerprints, or turn web content into Markdown for LLM analysis. Do not use for browser automation, login-gated flows, mass scraping, non-HTTP(S) URLs, or bypassing access controls.
 compatibility: Requires Python 3.10+, uv, and outbound network access. Uses curl_cffi and markitdown.
 license: MIT
 metadata:
@@ -27,7 +27,7 @@ Self-contained Python/uv script that:
 
 - uses `curl_cffi` for browser-like TLS/HTTP impersonation, redirects, HTTP/2/HTTP/3 hints, proxies, retries, and concurrent fetches;
 - uses `MarkItDown` to convert HTML, PDFs, Office files, text formats, feeds, ZIPs, and other supported formats into Markdown;
-- blocks private, localhost, link-local, reserved, multicast, and unspecified IP targets by default, including redirect targets;
+- blocks private, localhost, link-local, reserved, shared/CGNAT, multicast, unspecified, and otherwise non-public IP targets by default, including redirect targets;
 - emits structured JSONL metadata and can write per-URL Markdown files, raw bodies, a combined Markdown file, and cache entries.
 
 Run help before using unfamiliar options:

@@ -2,7 +2,7 @@
 name: toon
 description: Use this skill when the user asks to convert JSON to or from TOON, author or validate .toon files, compact structured data for LLM prompts, choose delimiters/key folding/path expansion, compare TOON with JSON/YAML/CSV, or use the @toon-format/toon CLI/API.
 license: MIT
-compatibility: Requires Deno plus Node/npm/npx for bundled scripts/toon.ts, which wraps npx @toon-format/cli@2.2.0. Agents may run the official npx CLI directly when Deno is unavailable.
+compatibility: Requires Deno 2.x with npm specifier support; first run may need network access to populate Deno's global cache. The bundled scripts/toon.ts uses pinned npm:@toon-format/toon@2.2.0 via Deno; use the official npx CLI only when Deno is unavailable.
 metadata:
   source_repository: "https://github.com/toon-format/toon"
   specification_repository: "https://github.com/toon-format/spec"
@@ -31,32 +31,32 @@ TOON (Token-Oriented Object Notation) is a compact, line-oriented, indentation-b
 
 ## Bundled script
 
-Run from the skill root:
+Run from the skill root. The examples use `--node-modules-dir=none` to avoid creating a local `node_modules` directory and `--no-lock` to avoid creating or updating a lockfile in the working tree; reproducibility comes from the exact `@toon-format/toon@2.2.0` package pin.
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json -o output.toon
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode data.toon -o output.json
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate data.toon
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode input.json -o output.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode data.toon -o output.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts validate data.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
 ```
 
 Useful options:
 
 ```bash
 # Tab delimiter for large tabular data
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --delimiter tab -o data.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode data.json --delimiter tab -o data.toon
 
 # Pipe delimiter when commas are common in values
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --delimiter pipe -o data.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode data.json --delimiter pipe -o data.toon
 
 # Collapse safe single-key wrapper chains
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --keyFolding safe -o folded.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode data.json --keyFolding safe -o folded.toon
 
 # Reconstruct folded dotted paths while decoding
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
-When Deno is unavailable but Node/npm are available, use the official CLI:
+When Deno is unavailable but Node/npm are available, use the official CLI. The bundled helper's `--stats` reports JSON/TOON byte and character counts, while the official CLI may report its own token-oriented statistics.
 
 ```bash
 npx @toon-format/cli@2.2.0 input.json -o output.toon
@@ -159,14 +159,14 @@ user.name: Ada
 Only decode them into nested objects when the user wants folded paths expanded:
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode data.toon --expandPaths safe
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode data.toon --expandPaths safe
 ```
 
 Use paired options for round-trips:
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
 ## Prompting with TOON

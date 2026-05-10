@@ -321,12 +321,24 @@ def make_markitdown(args: argparse.Namespace) -> MarkItDown:
             raise RuntimeError(
                 "openai is required for --llm-model but could not be imported"
             ) from exc
-        kwargs["llm_client"] = OpenAI()
+        try:
+            kwargs["llm_client"] = OpenAI()
+        except Exception as exc:
+            raise RuntimeError(
+                "OpenAI-compatible credentials are required for --llm-model. "
+                "Set OPENAI_API_KEY or another supported OpenAI credential, "
+                "then retry; or omit --llm-model for local-only conversion."
+            ) from exc
         kwargs["llm_model"] = args.llm_model
         if args.llm_prompt:
             kwargs["llm_prompt"] = args.llm_prompt
 
-    return MarkItDown(**kwargs)
+    try:
+        return MarkItDown(**kwargs)
+    except Exception as exc:
+        raise RuntimeError(
+            f"could not initialize MarkItDown with the requested options: {exc}"
+        ) from exc
 
 
 def convert_one(
@@ -402,7 +414,28 @@ def write_markdown(path: Path, markdown: str, *, overwrite: bool) -> None:
 
 def main() -> int:
     args = parse_args()
-    md = make_markitdown(args)
+    try:
+        md = make_markitdown(args)
+    except Exception as exc:
+        message = f"configuration error: {exc}"
+        print(message, file=sys.stderr)
+        if args.json:
+            print(
+                json.dumps(
+                    [
+                        {
+                            "input": input_value,
+                            "status": "error",
+                            "error": message,
+                        }
+                        for input_value in args.inputs
+                    ],
+                    indent=2,
+                    ensure_ascii=False,
+                )
+            )
+        return 2
+
     summaries: list[dict[str, Any]] = []
     reserved_paths: set[Path] = set()
     any_error = False

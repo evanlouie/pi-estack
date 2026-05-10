@@ -96,8 +96,8 @@ s = requests.Session(discard_cookies=True)
 
 When impersonation is enabled, browser headers are added. If exact header order or custom browser headers are required:
 
-1. Use `default_headers=False` and pass your own headers.
-2. For stored fingerprints, load a fingerprint object and edit `fingerprint.headers`.
+1. Use `default_headers=False` and pass your own headers explicitly.
+2. Use `ja3`, `akamai`, and `extra_fp` only when the user provides known-good fingerprint values for an authorized reproduction/debugging task.
 3. Do not mix contradictory headers such as a Chrome TLS fingerprint with a Firefox user agent unless the user is intentionally testing a mismatch.
 
 ## Authentication

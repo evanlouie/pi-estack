@@ -2,7 +2,7 @@
 name: a2ui
 description: "Use this skill when the user asks to create, edit, review, validate, convert, or explain A2UI Agent to UI JSON, JSONL, surfaces, components, catalogs, data binding, actions, A2A DataParts, AG UI transport payloads, or generative UI schemas. Covers A2UI v0.9 draft and v0.8 stable."
 license: MIT
-compatibility: "Text and JSON authoring. Optional validation script requires Python 3.9+."
+compatibility: "Text and JSON authoring. Optional validation script requires uv with Python 3.10+."
 metadata:
   version: "1.0.0"
   spec_versions: "A2UI v0.9 draft; A2UI v0.8 stable"
@@ -89,8 +89,8 @@ Server-to-client messages use `surfaceUpdate`, `dataModelUpdate`, `beginRenderin
 Use the bundled structural validator for a quick check:
 
 ```bash
-python3 scripts/validate_a2ui.py assets/examples/a2ui_v09_booking_form.json --format text
-python3 scripts/validate_a2ui.py assets/examples/a2ui_v08_profile_card.jsonl --format text
+uv run scripts/validate_a2ui.py assets/examples/a2ui_v09_booking_form.json --format text
+uv run scripts/validate_a2ui.py assets/examples/a2ui_v08_profile_card.jsonl --format text
 ```
 
 The validator checks message shape, surface lifecycle, component IDs, obvious child references, and common v0.8/v0.9 structural mistakes. It is not a full replacement for validation against the official protocol and catalog JSON Schemas.

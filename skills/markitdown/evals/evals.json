@@ -25,6 +25,11 @@
       "id": 5,
       "prompt": "Use the installed MarkItDown OCR plugin on this file.",
       "expected_output": "Checks or uses plugin mode explicitly with --use-plugins; does not enable plugins by default for unrelated conversions."
+    },
+    {
+      "id": 6,
+      "prompt": "Convert ./samples/report.pdf with image descriptions using gpt-4o-mini, but I have not configured any OpenAI credentials. Return a JSON summary of what happened.",
+      "expected_output": "Runs the helper with --llm-model and --json, reports a clear configuration error about missing OpenAI-compatible credentials without a Python traceback, preserves JSON-formatted failure output, and exits as a configuration failure rather than attempting conversion."
     }
   ]
 }

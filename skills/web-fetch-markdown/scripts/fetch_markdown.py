@@ -58,9 +58,9 @@ TEXT_MIMETYPES = {
     "application/x-javascript",
 }
 PRIVATE_ERROR = (
-    "URL resolves to a private, loopback, link-local, reserved, multicast, or "
-    "unspecified address. Re-run with --allow-private only for trusted local or "
-    "intranet targets."
+    "URL resolves to a private, loopback, link-local, reserved, multicast, shared, "
+    "unspecified, or otherwise non-public address. Re-run with --allow-private only "
+    "for trusted local, intranet, or other non-public targets."
 )
 
 
@@ -201,16 +201,9 @@ def validate_public_http_url(url: str, *, allow_private: bool) -> None:
 
     for ip_text in hosts_to_check:
         ip = ipaddress.ip_address(ip_text)
-        if any(
-            (
-                ip.is_private,
-                ip.is_loopback,
-                ip.is_link_local,
-                ip.is_multicast,
-                ip.is_reserved,
-                ip.is_unspecified,
-            )
-        ):
+        # ip.is_global catches non-public ranges such as CGNAT/shared address space
+        # that are not classified as private by ipaddress.
+        if ip.is_multicast or not ip.is_global:
             raise ValueError(f"{PRIVATE_ERROR} Host {host!r} resolved to {ip}.")
 
 

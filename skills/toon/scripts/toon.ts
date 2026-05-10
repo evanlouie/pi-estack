@@ -1,21 +1,24 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-run=npx
+#!/usr/bin/env -S deno run --no-lock --node-modules-dir=none --allow-read --allow-write
 /// <reference types="deno" />
-/// <reference lib="dom" />
 
-const CLI_PACKAGE = "@toon-format/cli@2.2.0";
+const TOON_PACKAGE = "@toon-format/toon@2.2.0";
+const TOON_SPECIFIER = `npm:${TOON_PACKAGE}`;
 const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
 
 const HELP = `TOON helper for agents
 
-This script wraps the official ${CLI_PACKAGE} package with agent-friendly
-commands, pinned versioning, structured validation output, and a round-trip check.
+This self-contained Deno script uses the pinned npm:${TOON_PACKAGE} package for
+agent-friendly TOON encoding, decoding, validation, and round-trip checks.
+
+The recommended Deno flags avoid local side effects: --node-modules-dir=none
+prevents a local node_modules directory, and --no-lock prevents creating or
+updating a lockfile. First run may need network access to populate Deno's cache.
 
 Usage:
-  deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode [input.json|-] [options]
-  deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode [input.toon|-] [options]
-  deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate [input.toon|-] [options]
-  deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts roundtrip [input.json|-] [options]
+  deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode [input.json|-] [options]
+  deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode [input.toon|-] [options]
+  deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts validate [input.toon|-] [options]
+  deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts roundtrip [input.json|-] [options]
 
 Commands:
   encode      Convert JSON to TOON.
@@ -33,19 +36,20 @@ Options:
   --expandPaths <off|safe>     Decode option for safe dotted-path expansion (default: off)
   --no-strict                  Decode without strict validation
   --compact                    Decode JSON output without indentation
-  --stats                      Pass through official CLI token statistics for encode
+  --stats                      Encode-only: print JSON/TOON size statistics to stderr
   -h, --help                   Show this help
 
 Examples:
-  deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json -o data.toon
-  deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --delimiter tab --keyFolding safe -o data.toon
-  deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode data.toon --expandPaths safe -o data.json
-  deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate data.toon
-  cat data.json | deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode > data.toon
+  deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode data.json -o data.toon
+  deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode data.json --delimiter tab --keyFolding safe -o data.toon
+  deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode data.toon --expandPaths safe -o data.json
+  deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts validate data.toon
+  cat data.json | deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode > data.toon
 `;
 
 type Command = "encode" | "decode" | "validate" | "roundtrip";
 type Mode = "off" | "safe";
+type Delimiter = "," | "\t" | "|";
 
 interface ParsedArgs {
   command: Command;
@@ -62,10 +66,16 @@ interface ParsedArgs {
   stats: boolean;
 }
 
-interface RunResult {
-  code: number;
-  stdout: string;
-  stderr: string;
+interface ToonModule {
+  encode(data: unknown, options?: Record<string, unknown>): string;
+  decode(text: string, options?: Record<string, unknown>): unknown;
+}
+
+let toonModulePromise: Promise<ToonModule> | undefined;
+
+function loadToonModule(): Promise<ToonModule> {
+  toonModulePromise ??= import(TOON_SPECIFIER) as Promise<ToonModule>;
+  return toonModulePromise;
 }
 
 function writeStdout(text: string): void {
@@ -77,8 +87,12 @@ function writeStderr(text: string): void {
 }
 
 function fail(message: string, exitCode = 1): never {
-  console.error(`Error: ${message}`);
+  writeStderr(`Error: ${message}\n`);
   Deno.exit(exitCode);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function parseMode(value: string, name: string): Mode {
@@ -114,7 +128,7 @@ function parseNumberLike(value: string, name: string): number {
   return number;
 }
 
-function normalizeDelimiter(value: string | undefined): "," | "\t" | "|" {
+function normalizeDelimiter(value: string | undefined): Delimiter {
   if (value == null || value === "" || value === "comma" || value === ",") {
     return ",";
   }
@@ -208,6 +222,14 @@ function parseArgs(argv: string[]): ParsedArgs | "help" {
 
   const input = positionals[0];
   if (input !== undefined) parsed.input = input;
+
+  if (parsed.stats && parsed.command !== "encode") {
+    fail("--stats is only supported by the encode command");
+  }
+  if (parsed.toonOutput && parsed.command !== "roundtrip") {
+    fail("--toon-output is only supported by the roundtrip command");
+  }
+
   return parsed;
 }
 
@@ -217,86 +239,25 @@ async function readStdin(): Promise<string> {
 
 async function readInput(path?: string): Promise<string> {
   if (!path || path === "-") return await readStdin();
-  return await Deno.readTextFile(path);
-}
-
-function encodeCliOptions(args: ParsedArgs): string[] {
-  const out: string[] = [
-    "--encode",
-    "--delimiter",
-    normalizeDelimiter(args.delimiter),
-  ];
-  if (args.indent !== undefined) out.push("--indent", String(args.indent));
-  if (args.keyFolding !== undefined) out.push("--keyFolding", args.keyFolding);
-  if (args.flattenDepth !== undefined) {
-    out.push("--flattenDepth", String(args.flattenDepth));
-  }
-  if (args.stats) out.push("--stats");
-  return out;
-}
-
-function decodeCliOptions(args: ParsedArgs, forRoundtrip = false): string[] {
-  const out: string[] = ["--decode"];
-  if (args.indent !== undefined) out.push("--indent", String(args.indent));
-  if (!args.strict) out.push("--no-strict");
-
-  let expandPaths = args.expandPaths;
-  if (forRoundtrip && expandPaths === undefined && args.keyFolding === "safe") {
-    expandPaths = "safe";
-  }
-  if (expandPaths !== undefined) out.push("--expandPaths", expandPaths);
-  return out;
-}
-
-function addInputAndOutput(
-  base: string[],
-  input: string | undefined,
-  output: string | undefined,
-): string[] {
-  const args = [...base];
-  if (input && input !== "-") args.push(input);
-  if (output) args.push("-o", output);
-  return args;
-}
-
-async function runOfficialCli(
-  cliArgs: string[],
-  stdinText?: string,
-): Promise<RunResult> {
-  const child = new Deno.Command("npx", {
-    args: ["--yes", CLI_PACKAGE, ...cliArgs],
-    stdin: "piped",
-    stdout: "piped",
-    stderr: "piped",
-  }).spawn();
-
-  const writer = child.stdin.getWriter();
   try {
-    await writer.write(textEncoder.encode(stdinText ?? ""));
-  } finally {
-    await writer.close();
+    return await Deno.readTextFile(path);
+  } catch (error) {
+    fail(`failed to read ${JSON.stringify(path)}: ${errorMessage(error)}`);
   }
-
-  const output = await child.output();
-  return {
-    code: output.code,
-    stdout: textDecoder.decode(output.stdout),
-    stderr: textDecoder.decode(output.stderr),
-  };
-}
-
-function printCliResult(result: RunResult, outputPath?: string): void {
-  if (result.stderr) writeStderr(result.stderr);
-  if (result.stdout) {
-    if (outputPath) writeStderr(result.stdout);
-    else writeStdout(result.stdout);
-  }
-  if (result.code !== 0) Deno.exit(result.code);
 }
 
 async function writeOutput(text: string, outputPath?: string): Promise<void> {
-  if (outputPath) await Deno.writeTextFile(outputPath, text);
-  else writeStdout(text);
+  if (!outputPath) {
+    writeStdout(text);
+    return;
+  }
+  try {
+    await Deno.writeTextFile(outputPath, text);
+  } catch (error) {
+    fail(
+      `failed to write ${JSON.stringify(outputPath)}: ${errorMessage(error)}`,
+    );
+  }
 }
 
 function jsonType(value: unknown): string {
@@ -305,158 +266,149 @@ function jsonType(value: unknown): string {
   return typeof value;
 }
 
-function errorSummary(stderr: string, stdout: string): Record<string, unknown> {
-  const text = (stderr || stdout || "TOON validation failed").trim();
-  const lineMatch = text.match(/line\s+(\d+)/i);
+function parseJsonInput(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    fail(`input is not valid JSON: ${errorMessage(error)}`);
+  }
+}
+
+function encodeOptions(args: ParsedArgs): Record<string, unknown> {
+  const options: Record<string, unknown> = {
+    delimiter: normalizeDelimiter(args.delimiter),
+  };
+  if (args.indent !== undefined) options["indent"] = args.indent;
+  if (args.keyFolding !== undefined) options["keyFolding"] = args.keyFolding;
+  if (args.flattenDepth !== undefined) {
+    options["flattenDepth"] = args.flattenDepth;
+  }
+  return options;
+}
+
+function decodeOptions(
+  args: ParsedArgs,
+  forRoundtrip = false,
+): Record<string, unknown> {
+  const options: Record<string, unknown> = {
+    strict: args.strict,
+  };
+  if (args.indent !== undefined) options["indent"] = args.indent;
+
+  let expandPaths = args.expandPaths;
+  if (forRoundtrip && expandPaths === undefined && args.keyFolding === "safe") {
+    expandPaths = "safe";
+  }
+  if (expandPaths !== undefined) options["expandPaths"] = expandPaths;
+  return options;
+}
+
+function formatJson(value: unknown, compact: boolean): string {
+  const rendered = compact
+    ? JSON.stringify(value)
+    : JSON.stringify(value, null, 2);
+  return compact ? rendered : `${rendered}\n`;
+}
+
+function validationError(error: unknown): Record<string, unknown> {
+  const maybeRecord = error as Record<string, unknown>;
   return {
     valid: false,
-    error: text,
-    ...(lineMatch ? { line: Number(lineMatch[1]) } : {}),
+    error: errorMessage(error),
+    ...(typeof maybeRecord["line"] === "number"
+      ? { line: maybeRecord["line"] }
+      : {}),
+    ...(typeof maybeRecord["source"] === "string"
+      ? { source: maybeRecord["source"] }
+      : {}),
   };
 }
 
-async function encodeCommand(args: ParsedArgs): Promise<void> {
-  const cliArgs = addInputAndOutput(
-    encodeCliOptions(args),
-    args.input,
-    args.output,
+function printEncodeStats(inputText: string, toonText: string): void {
+  const inputBytes = textEncoder.encode(inputText).length;
+  const toonBytes = textEncoder.encode(toonText).length;
+  const delta = toonBytes - inputBytes;
+  const percent = inputBytes === 0 ? 0 : (delta / inputBytes) * 100;
+  writeStderr(
+    `Stats: JSON ${inputBytes} bytes/${inputText.length} chars → TOON ${toonBytes} bytes/${toonText.length} chars (${
+      delta >= 0 ? "+" : ""
+    }${delta} bytes, ${percent.toFixed(1)}%).\n`,
   );
-  const stdinText = !args.input || args.input === "-"
-    ? await readStdin()
-    : undefined;
-  const result = await runOfficialCli(cliArgs, stdinText);
-  printCliResult(result, args.output);
+}
+
+async function encodeCommand(args: ParsedArgs): Promise<void> {
+  const inputText = await readInput(args.input);
+  const data = parseJsonInput(inputText);
+  const { encode } = await loadToonModule();
+  const toonText = encode(data, encodeOptions(args));
+  if (args.stats) printEncodeStats(inputText, toonText);
+  await writeOutput(toonText, args.output);
 }
 
 async function decodeCommand(args: ParsedArgs): Promise<void> {
-  const cliOutput = args.compact ? undefined : args.output;
-  const cliArgs = addInputAndOutput(
-    decodeCliOptions(args),
-    args.input,
-    cliOutput,
-  );
-  const stdinText = !args.input || args.input === "-"
-    ? await readStdin()
-    : undefined;
-  const result = await runOfficialCli(cliArgs, stdinText);
-
-  if (args.compact && result.code === 0) {
-    if (result.stderr) writeStderr(result.stderr);
-    try {
-      await writeOutput(JSON.stringify(JSON.parse(result.stdout)), args.output);
-      return;
-    } catch {
-      // Fall through to normal forwarding if the CLI output is not parseable JSON.
-    }
+  const inputText = await readInput(args.input);
+  const { decode } = await loadToonModule();
+  try {
+    const data = decode(inputText, decodeOptions(args));
+    await writeOutput(formatJson(data, args.compact), args.output);
+  } catch (error) {
+    fail(`failed to decode TOON: ${errorMessage(error)}`);
   }
-
-  printCliResult(result, args.output);
 }
 
 async function validateCommand(args: ParsedArgs): Promise<void> {
-  const cliArgs = addInputAndOutput(
-    decodeCliOptions(args),
-    args.input,
-    undefined,
-  );
-  const stdinText = !args.input || args.input === "-"
-    ? await readStdin()
-    : undefined;
-  const result = await runOfficialCli(cliArgs, stdinText);
-
-  if (result.code === 0) {
-    let value: unknown = undefined;
-    try {
-      value = JSON.parse(result.stdout);
-    } catch {
-      value = result.stdout;
-    }
+  const inputText = await readInput(args.input);
+  const { decode } = await loadToonModule();
+  try {
+    const value = decode(inputText, decodeOptions(args));
     await writeOutput(
       `${JSON.stringify({ valid: true, type: jsonType(value) }, null, 2)}\n`,
       args.output,
     );
-    return;
+  } catch (error) {
+    await writeOutput(
+      `${JSON.stringify(validationError(error), null, 2)}\n`,
+      args.output,
+    );
+    Deno.exit(1);
   }
-
-  await writeOutput(
-    `${JSON.stringify(errorSummary(result.stderr, result.stdout), null, 2)}\n`,
-    args.output,
-  );
-  Deno.exit(result.code);
 }
 
 async function roundtripCommand(args: ParsedArgs): Promise<void> {
   const originalText = await readInput(args.input);
+  const original = parseJsonInput(originalText);
+  const { encode, decode } = await loadToonModule();
 
-  let original: unknown;
+  const toon = encode(original, encodeOptions({ ...args, stats: false }));
+  let restored: unknown;
   try {
-    original = JSON.parse(originalText);
+    restored = decode(toon, decodeOptions(args, true));
   } catch (error) {
-    fail(`input is not valid JSON: ${(error as Error).message}`);
+    fail(`encoded TOON did not decode: ${errorMessage(error)}`);
   }
 
-  const temp = await Deno.makeTempDir({ prefix: "toon-skill-" });
-  try {
-    const inputJson = `${temp}/input.json`;
-    const encodedToon = `${temp}/encoded.toon`;
-    const restoredJson = `${temp}/restored.json`;
-    await Deno.writeTextFile(inputJson, originalText);
+  const equal = JSON.stringify(original) === JSON.stringify(restored);
 
-    const encodeArgs = addInputAndOutput(
-      encodeCliOptions({ ...args, stats: false }),
-      inputJson,
-      encodedToon,
-    );
-    const encodeResult = await runOfficialCli(encodeArgs);
-    if (encodeResult.code !== 0) {
-      if (encodeResult.stderr) writeStderr(encodeResult.stderr);
-      if (encodeResult.stdout) writeStderr(encodeResult.stdout);
-      Deno.exit(encodeResult.code);
-    }
-
-    const decodeArgs = addInputAndOutput(
-      decodeCliOptions(args, true),
-      encodedToon,
-      restoredJson,
-    );
-    const decodeResult = await runOfficialCli(decodeArgs);
-    if (decodeResult.code !== 0) {
-      if (decodeResult.stderr) writeStderr(decodeResult.stderr);
-      if (decodeResult.stdout) writeStderr(decodeResult.stdout);
-      Deno.exit(decodeResult.code);
-    }
-
-    const toon = await Deno.readTextFile(encodedToon);
-    const restoredText = await Deno.readTextFile(restoredJson);
-    const restored = JSON.parse(restoredText);
-    const equal = JSON.stringify(original) === JSON.stringify(restored);
-
-    if (args.toonOutput) await Deno.writeTextFile(args.toonOutput, toon);
-    if (args.output) {
-      const finalJson = args.compact
-        ? JSON.stringify(restored)
-        : `${JSON.stringify(restored, null, 2)}\n`;
-      await Deno.writeTextFile(args.output, finalJson);
-    }
-
-    const result = {
-      equal,
-      toon_bytes: textEncoder.encode(toon).length,
-      restored_type: jsonType(restored),
-      toon_output: args.toonOutput ?? null,
-      restored_output: args.output ?? null,
-    };
-    writeStdout(`${JSON.stringify(result, null, 2)}\n`);
-    if (!equal) Deno.exit(1);
-  } finally {
-    await Deno.remove(temp, { recursive: true });
+  if (args.toonOutput) await writeOutput(toon, args.toonOutput);
+  if (args.output) {
+    await writeOutput(formatJson(restored, args.compact), args.output);
   }
+
+  const result = {
+    equal,
+    toon_bytes: textEncoder.encode(toon).length,
+    restored_type: jsonType(restored),
+    toon_output: args.toonOutput ?? null,
+    restored_output: args.output ?? null,
+  };
+  writeStdout(`${JSON.stringify(result, null, 2)}\n`);
+  if (!equal) Deno.exit(1);
 }
 
 async function main(): Promise<void> {
   const args = parseArgs(Deno.args);
   if (args === "help") {
-    console.log(HELP);
+    writeStdout(HELP);
     return;
   }
 
@@ -467,7 +419,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((unknownError) => {
-  const err = unknownError as Error;
-  console.error(err.stack ?? err.message ?? String(unknownError));
+  writeStderr(`${errorMessage(unknownError)}\n`);
   Deno.exit(1);
 });

@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
 """Lightweight structural validator for A2UI v0.9 and v0.8 payloads.
 
 This validator intentionally avoids external dependencies. It checks common
@@ -112,11 +116,23 @@ class ValidationResult:
 
 
 def load_messages(path: str | None) -> tuple[list[Any], list[Issue]]:
-    text = (
-        sys.stdin.read()
-        if path in (None, "-")
-        else Path(path).read_text(encoding="utf-8")
-    )
+    try:
+        text = (
+            sys.stdin.read()
+            if path in (None, "-")
+            else Path(path).read_text(encoding="utf-8")
+        )
+    except FileNotFoundError:
+        return [], [Issue("error", f"Input file not found: {path}", "$")]
+    except PermissionError:
+        return [], [
+            Issue("error", f"Permission denied reading input file: {path}", "$")
+        ]
+    except UnicodeDecodeError as exc:
+        return [], [Issue("error", f"Input file is not valid UTF-8: {exc.reason}", "$")]
+    except OSError as exc:
+        return [], [Issue("error", f"Could not read input file {path!r}: {exc}", "$")]
+
     stripped = text.strip()
     if not stripped:
         return [], [Issue("error", "Input is empty", "$")]
@@ -869,21 +885,25 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     messages, load_issues = load_messages(args.path)
-    version = args.version if args.version != "auto" else detect_version(messages)
 
-    if version == "v0.9":
-        result = validate_v09(messages, load_issues)
-    elif version == "v0.8":
-        result = validate_v08(messages, load_issues)
+    if not messages and any(issue.level == "error" for issue in load_issues):
+        result = ValidationResult("unknown", 0, {}, load_issues)
     else:
-        issues = load_issues + [
-            Issue(
-                "error",
-                f"Could not determine A2UI version automatically ({version})",
-                "$",
-            )
-        ]
-        result = ValidationResult(version, len(messages), {}, issues)
+        version = args.version if args.version != "auto" else detect_version(messages)
+
+        if version == "v0.9":
+            result = validate_v09(messages, load_issues)
+        elif version == "v0.8":
+            result = validate_v08(messages, load_issues)
+        else:
+            issues = load_issues + [
+                Issue(
+                    "error",
+                    f"Could not determine A2UI version automatically ({version})",
+                    "$",
+                )
+            ]
+            result = ValidationResult(version, len(messages), {}, issues)
 
     if args.format == "json":
         print(json.dumps(result.to_dict(), indent=2, sort_keys=True))

@@ -36,8 +36,8 @@ a2ui/
 
 ```bash
 cd a2ui
-python3 scripts/validate_a2ui.py assets/examples/a2ui_v09_booking_form.json --format text
-python3 scripts/validate_a2ui.py assets/examples/a2ui_v08_profile_card.jsonl --format text
+uv run scripts/validate_a2ui.py assets/examples/a2ui_v09_booking_form.json --format text
+uv run scripts/validate_a2ui.py assets/examples/a2ui_v08_profile_card.jsonl --format text
 ```
 
 The script performs lightweight structural validation. It is not a full official schema validator.

@@ -14,7 +14,7 @@ A reusable Agent Skill for generating, reviewing, validating, and adapting Open-
 ## Validate a payload
 
 ```bash
-python scripts/validate_open_json_ui.py payload.json --pretty
+uv run scripts/validate_open_json_ui.py payload.json --pretty
 ```
 
 The validator is intentionally permissive and should not replace a target renderer's official schema.

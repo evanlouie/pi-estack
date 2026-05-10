@@ -49,13 +49,13 @@ Avoid or benchmark TOON when:
 
 ## Conversion commands
 
-Bundled script:
+Bundled script. The `--node-modules-dir=none` and `--no-lock` flags keep runs from creating local `node_modules` or lockfiles; first run may need network access to cache the pinned package globally.
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json -o output.toon
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode input.toon -o output.json
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate input.toon
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts roundtrip input.json --toon-output encoded.toon -o restored.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode input.json -o output.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode input.toon -o output.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts validate input.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts roundtrip input.json --toon-output encoded.toon -o restored.json
 ```
 
 Official CLI:
@@ -69,9 +69,9 @@ npx @toon-format/cli@2.2.0 input.json --stats
 Stdin examples:
 
 ```bash
-cat data.json | deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode > data.toon
-cat data.toon | deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode > data.json
-echo '{"name":"Ada","role":"dev"}' | deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode
+cat data.json | deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode > data.toon
+cat data.toon | deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode > data.json
+echo '{"name":"Ada","role":"dev"}' | deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode
 ```
 
 ## TypeScript API
@@ -286,7 +286,7 @@ items[2|]{sku|name}:
 Tab uses actual tab characters in the bracket, fields, and rows. Prefer a tool for tab-delimited output:
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --delimiter tab -o data.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode data.json --delimiter tab -o data.toon
 ```
 
 Delimiter strategy:
@@ -312,8 +312,8 @@ data.metadata.items[2]: a,b
 Round-trip safely by pairing encode and decode options:
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
 Safe folding only folds identifier-like segments and avoids collisions. Do not enable path expansion unless the user wants dotted keys reconstructed as nested objects.
@@ -335,7 +335,7 @@ Strict decoding should fail on:
 Use:
 
 ```bash
-deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate data.toon
+deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts validate data.toon
 ```
 
 Expected structured result:

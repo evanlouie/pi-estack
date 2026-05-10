@@ -4,4 +4,8 @@
 
 pi-estack is the personal Pi package for [evanlouie](https://github.com/evanlouie/) containing an assortment of Pi extensions/skills/prompts/themes.
 
-**ALWAYS** read through the Pi documentation regarding extensions, skills, prompt templates, themes, and packages, prior to working on this project.
+## Skills
+
+When creating, updating, or touching any skills, read through all of the agent skills documentation: <https://agentskills.io/llms.txt>
+
+Scripts in skills must be self-contained and written in either Python using uv or TypeScript using Deno.

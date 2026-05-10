@@ -45,7 +45,7 @@ Load reference files only when needed:
 Run scripts from the skill directory root using `uv run`:
 
 - `scripts/scaffold_skill.py` — scaffold a new skill directory from a name and description.
-- `scripts/validate_skill.py` — validate a skill directory or `SKILL.md` and report issues.
+- `scripts/validate_skill.py` — validate a skill directory or `SKILL.md`, including frontmatter, references, evals, and project script-language rules.
 - `scripts/split_trigger_evals.py` — split `eval_queries.json` into train and validation sets.
 
 Examples:

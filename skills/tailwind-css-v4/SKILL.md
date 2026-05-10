@@ -5,7 +5,7 @@ description: >-
 license: MIT
 compatibility: Tailwind CSS v4.x; Deno is required only for the optional bundled audit script; Node.js/npm, pnpm, yarn, Bun, or Deno project commands depend on the target project.
 metadata:
-  version: "1.0.4"
+  version: "1.0.5"
   tailwind_major: "4"
   author: "OpenAI"
 ---
