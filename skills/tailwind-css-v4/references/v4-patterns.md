@@ -133,7 +133,7 @@ Use `@custom-variant` to define a reusable variant and `@variant` to apply a Tai
 }
 ```
 
-Tailwind v4.3 and newer allow stacked or compound variants in `@variant`, for example `@variant hover:focus` or `@variant hover, focus`. Verify the installed minor version before using minor-release-specific syntax.
+Use only `@variant` syntax documented for the installed Tailwind minor version; verify current docs before relying on minor-release-specific syntax.
 
 ## Component styles and modules
 

@@ -27,7 +27,7 @@ Self-contained Python/uv script that:
 
 - uses `curl_cffi` for browser-like TLS/HTTP impersonation, redirects, HTTP/2/HTTP/3 hints, proxies, retries, and concurrent fetches;
 - uses `MarkItDown` to convert HTML, PDFs, Office files, text formats, feeds, ZIPs, and other supported formats into Markdown;
-- blocks private, localhost, link-local, reserved, multicast, and unspecified IP targets by default;
+- blocks private, localhost, link-local, reserved, multicast, and unspecified IP targets by default, including redirect targets;
 - emits structured JSONL metadata and can write per-URL Markdown files, raw bodies, a combined Markdown file, and cache entries.
 
 Run help before using unfamiliar options:
@@ -87,7 +87,7 @@ For pages that return an access-denied, CAPTCHA, bot-check, paywall, or login pa
 - Prefer `--output-dir` for large pages, PDFs, and multi-URL tasks.
 - If a response is larger than the default `--max-bytes`, either raise the limit only when justified or ask for a narrower source.
 - If `MarkItDown` conversion fails but the response is textual, the script falls back to decoded text and records `conversion_error`.
-- Review `manifest.jsonl` for HTTP status, final URL, content type, byte size, output path, and errors before relying on the Markdown.
+- Review `manifest.jsonl` for HTTP status, final URL, redirect count, content type, byte size, output path, and errors before relying on the Markdown.
 
 ## Output handling
 

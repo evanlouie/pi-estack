@@ -117,7 +117,7 @@ npx @tailwindcss/cli -i ./src/input.css -o ./src/output.css --watch
 
 ## Migration guidance
 
-When upgrading from v3, first consider the official upgrade tool:
+When upgrading from v3, first consider the official upgrade tool. It requires Node.js 20 or higher:
 
 ```bash
 npx @tailwindcss/upgrade

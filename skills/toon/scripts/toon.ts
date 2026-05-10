@@ -24,7 +24,7 @@ Commands:
   roundtrip   Encode JSON to TOON, decode it back, compare, and optionally write outputs.
 
 Options:
-  -o, --output <file>          Output path. For roundtrip, this writes restored JSON.
+  -o, --output <file>          Output path. For validate, writes the JSON result. For roundtrip, writes restored JSON.
   --toon-output <file>         Roundtrip-only: write encoded TOON to this path.
   --delimiter <value>          comma, ",", tab, "\\t", pipe, or "|" (default: comma)
   --indent <number>            Spaces per indentation level (default: 2)
@@ -32,7 +32,7 @@ Options:
   --flattenDepth <number>      Maximum folded path length when keyFolding=safe
   --expandPaths <off|safe>     Decode option for safe dotted-path expansion (default: off)
   --no-strict                  Decode without strict validation
-  --compact                    Decode JSON output without indentation (wrapper output only)
+  --compact                    Decode JSON output without indentation
   --stats                      Pass through official CLI token statistics for encode
   -h, --help                   Show this help
 
@@ -294,6 +294,11 @@ function printCliResult(result: RunResult, outputPath?: string): void {
   if (result.code !== 0) Deno.exit(result.code);
 }
 
+async function writeOutput(text: string, outputPath?: string): Promise<void> {
+  if (outputPath) await Deno.writeTextFile(outputPath, text);
+  else writeStdout(text);
+}
+
 function jsonType(value: unknown): string {
   if (value === null) return "null";
   if (Array.isArray(value)) return "array";
@@ -324,19 +329,21 @@ async function encodeCommand(args: ParsedArgs): Promise<void> {
 }
 
 async function decodeCommand(args: ParsedArgs): Promise<void> {
+  const cliOutput = args.compact ? undefined : args.output;
   const cliArgs = addInputAndOutput(
     decodeCliOptions(args),
     args.input,
-    args.output,
+    cliOutput,
   );
   const stdinText = !args.input || args.input === "-"
     ? await readStdin()
     : undefined;
   const result = await runOfficialCli(cliArgs, stdinText);
 
-  if (args.compact && result.code === 0 && !args.output) {
+  if (args.compact && result.code === 0) {
+    if (result.stderr) writeStderr(result.stderr);
     try {
-      writeStdout(JSON.stringify(JSON.parse(result.stdout)));
+      await writeOutput(JSON.stringify(JSON.parse(result.stdout)), args.output);
       return;
     } catch {
       // Fall through to normal forwarding if the CLI output is not parseable JSON.
@@ -364,14 +371,16 @@ async function validateCommand(args: ParsedArgs): Promise<void> {
     } catch {
       value = result.stdout;
     }
-    writeStdout(
+    await writeOutput(
       `${JSON.stringify({ valid: true, type: jsonType(value) }, null, 2)}\n`,
+      args.output,
     );
     return;
   }
 
-  writeStdout(
+  await writeOutput(
     `${JSON.stringify(errorSummary(result.stderr, result.stdout), null, 2)}\n`,
+    args.output,
   );
   Deno.exit(result.code);
 }

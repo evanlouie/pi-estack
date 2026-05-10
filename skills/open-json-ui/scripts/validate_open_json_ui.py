@@ -42,9 +42,16 @@ DANGEROUS_PATTERNS = [
     re.compile(r"<\s*script", re.IGNORECASE),
     re.compile(r"javascript\s*:", re.IGNORECASE),
     re.compile(r"\bon[A-Z_a-z]+\s*=", re.IGNORECASE),
-    re.compile(r"\bfunction\s*\(", re.IGNORECASE),
+    re.compile(
+        r"\b(?:fetch|eval|function|Function|setTimeout|setInterval)\s*\(", re.IGNORECASE
+    ),
     re.compile(r"=>"),
 ]
+
+EVENT_HANDLER_KEY_PATTERN = re.compile(
+    r"^on(?:[_:-])?(?:click|change|submit|hover|input|load|error|focus|blur|key|mouse|pointer|touch|drag|drop|select|toggle|scroll|close|open)(?:$|[_:-]|[A-Z])",
+    re.IGNORECASE,
+)
 
 
 class ValidationState:
@@ -69,7 +76,9 @@ def load_json(path: str) -> Any:
             text = Path(path).read_text(encoding="utf-8")
         return json.loads(text)
     except json.JSONDecodeError as exc:
-        raise ValueError(f"Invalid JSON at line {exc.lineno}, column {exc.colno}: {exc.msg}") from exc
+        raise ValueError(
+            f"Invalid JSON at line {exc.lineno}, column {exc.colno}: {exc.msg}"
+        ) from exc
     except OSError as exc:
         raise ValueError(f"Could not read {path!r}: {exc}") from exc
 
@@ -93,7 +102,10 @@ def detect_dialect(root: Any) -> str:
 def check_string(value: str, path: str, state: ValidationState) -> None:
     for pattern in DANGEROUS_PATTERNS:
         if pattern.search(value):
-            state.warn(path, "string looks like executable code or raw HTML; prefer declarative fields")
+            state.warn(
+                path,
+                "string looks like executable code or raw HTML; prefer declarative fields",
+            )
             break
 
 
@@ -112,7 +124,9 @@ def validate_any(value: Any, path: str, state: ValidationState) -> None:
                 validate_any(item, f"{path}.{key}", state)
 
 
-def validate_component(component: dict[str, Any], path: str, state: ValidationState) -> None:
+def validate_component(
+    component: dict[str, Any], path: str, state: ValidationState
+) -> None:
     state.component_count += 1
 
     ctype = component.get("type")
@@ -121,18 +135,26 @@ def validate_component(component: dict[str, Any], path: str, state: ValidationSt
         return
 
     if ctype not in KNOWN_TYPES and ctype not in {"open-json-ui", "STATE_DELTA"}:
-        state.warn(path, f"unknown component type {ctype!r}; ensure the target renderer supports it")
+        state.warn(
+            path,
+            f"unknown component type {ctype!r}; ensure the target renderer supports it",
+        )
 
     cid = component.get("id")
     if cid is not None:
         if not isinstance(cid, str) or not cid:
             state.error(path, "component id must be a non-empty string")
         elif cid in state.ids:
-            state.error(path, f"duplicate component id {cid!r}; first seen at {state.ids[cid]}")
+            state.error(
+                path, f"duplicate component id {cid!r}; first seen at {state.ids[cid]}"
+            )
         else:
             state.ids[cid] = path
 
-    props = component.get("properties") if isinstance(component.get("properties"), dict) else component
+    component_properties = component.get("properties")
+    props: dict[str, Any] = (
+        component_properties if isinstance(component_properties, dict) else component
+    )
 
     if ctype in {"screen", "card", "section", "row", "column"}:
         content = props.get("content")
@@ -162,7 +184,10 @@ def validate_component(component: dict[str, Any], path: str, state: ValidationSt
         if not isinstance(props.get("data"), (list, dict)):
             state.warn(path, "chart should include 'data' as an array or object")
         if not isinstance(props.get("chartType"), str):
-            state.warn(path, "chart should include a string 'chartType' such as 'bar' or 'line'")
+            state.warn(
+                path,
+                "chart should include a string 'chartType' such as 'bar' or 'line'",
+            )
 
     if ctype == "form":
         if not isinstance(props.get("fields"), list):
@@ -190,12 +215,19 @@ def validate_component(component: dict[str, Any], path: str, state: ValidationSt
         state.warn(path, "image should include an 'alt' string for accessibility")
 
     for key, value in component.items():
+        child_path = f"{path}.{key}"
+        if EVENT_HANDLER_KEY_PATTERN.match(key):
+            state.warn(
+                child_path,
+                "event-handler field names are not declarative; use an action object with name and parameters",
+            )
+
         if key == "properties" and isinstance(value, dict):
             validate_any(value, f"{path}.properties", state)
         elif key in {"content", "items", "fields", "actions"}:
-            validate_any(value, f"{path}.{key}", state)
+            validate_any(value, child_path, state)
         else:
-            validate_any(value, f"{path}.{key}", state)
+            validate_any(value, child_path, state)
 
 
 def validate_root(root: Any) -> dict[str, Any]:
@@ -217,7 +249,10 @@ def validate_root(root: Any) -> dict[str, Any]:
             state.warn("$.components", "components array is empty")
         validate_any(components, "$.components", state)
         if "version" not in root:
-            state.warn("$.version", "component-catalog dialect usually includes a version string")
+            state.warn(
+                "$.version",
+                "component-catalog dialect usually includes a version string",
+            )
     elif dialect == "ag-ui-state-delta-carrier":
         content = root.get("delta", {}).get("ui", {}).get("content")
         validate_any(content, "$.delta.ui.content", state)
@@ -238,9 +273,13 @@ def validate_root(root: Any) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Permissive Open-JSON-UI sanity validator")
+    parser = argparse.ArgumentParser(
+        description="Permissive Open-JSON-UI sanity validator"
+    )
     parser.add_argument("path", help="JSON file to validate, or '-' for stdin")
-    parser.add_argument("--pretty", action="store_true", help="Pretty-print validation output")
+    parser.add_argument(
+        "--pretty", action="store_true", help="Pretty-print validation output"
+    )
     args = parser.parse_args()
 
     try:

@@ -38,7 +38,7 @@ r = requests.get(url, impersonate="chrome", headers={"Accept-Language": "en-US,e
 r = requests.get(url, impersonate="chrome", default_headers=False, headers={"User-Agent": "..."})
 ```
 
-For stored fingerprint targets, load an editable fingerprint object:
+For stored fingerprint targets, load an editable fingerprint object. Choose an exact target shown by `curl-cffi list` rather than inventing a name:
 
 ```python
 import curl_cffi
@@ -101,7 +101,7 @@ If the shell command is unavailable, try:
 
 ```bash
 python -m curl_cffi get https://example.com
-uv run curl-cffi get https://example.com
+uvx --from 'curl_cffi[cli]>=0.15,<0.16' curl-cffi get https://example.com
 ```
 
 ## CLI request syntax
@@ -150,6 +150,8 @@ Request item separators:
 | `field:=json` | JSON interpreted field | `age:=30` |
 | `@filepath` | File upload | `@photo.jpg` |
 | `+key=value` | Cookie | `+session=abc123` |
+
+If CLI file upload raises a `files is not supported` error in the installed version, switch to Python code with `CurlMime` and `multipart=`.
 
 ## CLI output control
 

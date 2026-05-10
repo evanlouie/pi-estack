@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pyright: reportAttributeAccessIssue=false
 # /// script
 # requires-python = ">=3.10,<3.14"
 # dependencies = [
@@ -22,7 +23,6 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import json
-import os
 import re
 import socket
 import sys
@@ -30,8 +30,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urljoin, urlparse
 
-import requests
-from markitdown import MarkItDown, StreamInfo
+import requests  # type: ignore[reportMissingModuleSource]
+from markitdown import (  # type: ignore[reportAttributeAccessIssue]
+    MarkItDown,
+    StreamInfo,
+)
 
 REMOTE_BLOCKED_HOSTS = {"localhost", "localhost.localdomain"}
 DEFAULT_MAX_REMOTE_MB = 50.0
@@ -43,26 +46,86 @@ def parse_args() -> argparse.Namespace:
         description="Convert files or trusted public URLs to Markdown using Microsoft MarkItDown.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("inputs", nargs="+", help="Local file paths, or HTTP(S) URLs when --allow-remote is set.")
-    parser.add_argument("-o", "--output", help="Output Markdown file. Valid only with exactly one input.")
-    parser.add_argument("--output-dir", default="markitdown-output", help="Directory for generated .md files when --output is not used.")
-    parser.add_argument("--stdout", action="store_true", help="Write Markdown for a single input to stdout instead of a file.")
-    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output files.")
-    parser.add_argument("--json", action="store_true", help="Print a JSON conversion summary to stdout. Not compatible with --stdout.")
+    parser.add_argument(
+        "inputs",
+        nargs="+",
+        help="Local file paths, or HTTP(S) URLs when --allow-remote is set.",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output Markdown file. Valid only with exactly one input.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="markitdown-output",
+        help="Directory for generated .md files when --output is not used.",
+    )
+    parser.add_argument(
+        "--stdout",
+        action="store_true",
+        help="Write Markdown for a single input to stdout instead of a file.",
+    )
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite existing output files."
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print a JSON conversion summary to stdout. Not compatible with --stdout.",
+    )
 
-    parser.add_argument("--extension", help="File extension hint such as .pdf or docx. Applies to all inputs.")
-    parser.add_argument("--mime-type", help="MIME type hint such as application/pdf. Applies to all inputs.")
-    parser.add_argument("--charset", help="Charset hint such as UTF-8. Applies to all inputs.")
-    parser.add_argument("--keep-data-uris", action="store_true", help="Keep base64 data URIs instead of letting MarkItDown truncate them.")
+    parser.add_argument(
+        "--extension",
+        help="File extension hint such as .pdf or docx. Applies to all inputs.",
+    )
+    parser.add_argument(
+        "--mime-type",
+        help="MIME type hint such as application/pdf. Applies to all inputs.",
+    )
+    parser.add_argument(
+        "--charset", help="Charset hint such as UTF-8. Applies to all inputs."
+    )
+    parser.add_argument(
+        "--keep-data-uris",
+        action="store_true",
+        help="Keep base64 data URIs instead of letting MarkItDown truncate them.",
+    )
 
-    parser.add_argument("--allow-remote", action="store_true", help="Allow HTTP(S) URL inputs after public-address validation.")
-    parser.add_argument("--max-remote-mb", type=float, default=DEFAULT_MAX_REMOTE_MB, help="Maximum bytes to download per remote URL, in MB.")
-    parser.add_argument("--timeout", type=float, default=30.0, help="HTTP connection/read timeout in seconds for each remote request.")
+    parser.add_argument(
+        "--allow-remote",
+        action="store_true",
+        help="Allow HTTP(S) URL inputs after public-address validation.",
+    )
+    parser.add_argument(
+        "--max-remote-mb",
+        type=float,
+        default=DEFAULT_MAX_REMOTE_MB,
+        help="Maximum bytes to download per remote URL, in MB.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=30.0,
+        help="HTTP connection/read timeout in seconds for each remote request.",
+    )
 
-    parser.add_argument("--use-plugins", action="store_true", help="Enable installed third-party MarkItDown plugins.")
-    parser.add_argument("--docintel-endpoint", help="Azure Document Intelligence endpoint for MarkItDown document intelligence conversion.")
-    parser.add_argument("--llm-model", help="Model name for MarkItDown image descriptions. Requires an OpenAI-compatible client and credentials.")
-    parser.add_argument("--llm-prompt", help="Optional prompt for MarkItDown LLM image descriptions.")
+    parser.add_argument(
+        "--use-plugins",
+        action="store_true",
+        help="Enable installed third-party MarkItDown plugins.",
+    )
+    parser.add_argument(
+        "--docintel-endpoint",
+        help="Azure Document Intelligence endpoint for MarkItDown document intelligence conversion.",
+    )
+    parser.add_argument(
+        "--llm-model",
+        help="Model name for MarkItDown image descriptions. Requires an OpenAI-compatible client and credentials.",
+    )
+    parser.add_argument(
+        "--llm-prompt", help="Optional prompt for MarkItDown LLM image descriptions."
+    )
 
     args = parser.parse_args()
 
@@ -73,7 +136,9 @@ def parse_args() -> argparse.Namespace:
     if args.stdout and args.output:
         parser.error("--stdout and --output cannot be used together")
     if args.stdout and args.json:
-        parser.error("--stdout and --json cannot be used together because both write to stdout")
+        parser.error(
+            "--stdout and --json cannot be used together because both write to stdout"
+        )
     if args.max_remote_mb <= 0:
         parser.error("--max-remote-mb must be positive")
     if args.timeout <= 0:
@@ -108,9 +173,15 @@ def validate_public_http_url(url: str) -> None:
         raise ValueError(f"blocked local hostname: {parsed.hostname}")
 
     try:
-        addresses = socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme == "https" else 80), type=socket.SOCK_STREAM)
+        addresses = socket.getaddrinfo(
+            host,
+            parsed.port or (443 if parsed.scheme == "https" else 80),
+            type=socket.SOCK_STREAM,
+        )
     except socket.gaierror as exc:
-        raise ValueError(f"could not resolve hostname {parsed.hostname!r}: {exc}") from exc
+        raise ValueError(
+            f"could not resolve hostname {parsed.hostname!r}: {exc}"
+        ) from exc
 
     if not addresses:
         raise ValueError(f"hostname {parsed.hostname!r} did not resolve")
@@ -130,17 +201,27 @@ def validate_public_http_url(url: str) -> None:
             or ip.is_reserved
             or ip.is_unspecified
         ):
-            raise ValueError(f"blocked non-public remote address {ip} for hostname {parsed.hostname!r}")
+            raise ValueError(
+                f"blocked non-public remote address {ip} for hostname {parsed.hostname!r}"
+            )
 
 
-def fetch_public_url(url: str, *, max_bytes: int, timeout: float) -> tuple[requests.Response, str, int]:
+def fetch_public_url(
+    url: str, *, max_bytes: int, timeout: float
+) -> tuple[requests.Response, str, int]:
     session = requests.Session()
     headers = {"User-Agent": "agent-skill-markitdown/1.0"}
     current = url
 
     for redirect_count in range(MAX_REDIRECTS + 1):
         validate_public_http_url(current)
-        response = session.get(current, headers=headers, stream=True, allow_redirects=False, timeout=(timeout, timeout))
+        response = session.get(
+            current,
+            headers=headers,
+            stream=True,
+            allow_redirects=False,
+            timeout=(timeout, timeout),
+        )
 
         if response.is_redirect or response.is_permanent_redirect:
             if redirect_count >= MAX_REDIRECTS:
@@ -156,9 +237,15 @@ def fetch_public_url(url: str, *, max_bytes: int, timeout: float) -> tuple[reque
         response.raise_for_status()
 
         content_length = response.headers.get("Content-Length")
-        if content_length and content_length.isdigit() and int(content_length) > max_bytes:
+        if (
+            content_length
+            and content_length.isdigit()
+            and int(content_length) > max_bytes
+        ):
             response.close()
-            raise ValueError(f"remote file is larger than the configured limit ({max_bytes} bytes)")
+            raise ValueError(
+                f"remote file is larger than the configured limit ({max_bytes} bytes)"
+            )
 
         chunks: list[bytes] = []
         total = 0
@@ -168,11 +255,15 @@ def fetch_public_url(url: str, *, max_bytes: int, timeout: float) -> tuple[reque
             total += len(chunk)
             if total > max_bytes:
                 response.close()
-                raise ValueError(f"remote file exceeded the configured limit ({max_bytes} bytes)")
+                raise ValueError(
+                    f"remote file exceeded the configured limit ({max_bytes} bytes)"
+                )
             chunks.append(chunk)
 
-        response._content = b"".join(chunks)  # MarkItDown reads response.content.
-        response._content_consumed = True
+        # MarkItDown reads the response through iter_content(); cache the bounded
+        # body so requests can replay it from memory without re-opening the socket.
+        setattr(response, "_content", b"".join(chunks))
+        setattr(response, "_content_consumed", True)
         response.url = current
         return response, current, total
 
@@ -196,7 +287,9 @@ def output_name_for_input(input_value: str, *, final_url: str | None = None) -> 
     return safe_output_name(Path(input_value).name, fallback="document")
 
 
-def unique_output_path(base_dir: Path, filename: str, reserved: set[Path], overwrite: bool) -> Path:
+def unique_output_path(
+    base_dir: Path, filename: str, reserved: set[Path], overwrite: bool
+) -> Path:
     base_dir.mkdir(parents=True, exist_ok=True)
     candidate = base_dir / filename
     if overwrite:
@@ -221,9 +314,13 @@ def make_markitdown(args: argparse.Namespace) -> MarkItDown:
 
     if args.llm_model:
         try:
-            from openai import OpenAI
-        except Exception as exc:  # pragma: no cover - dependency should be present from PEP 723.
-            raise RuntimeError("openai is required for --llm-model but could not be imported") from exc
+            from openai import OpenAI  # type: ignore[reportMissingImports]
+        except (
+            Exception
+        ) as exc:  # pragma: no cover - dependency should be present from PEP 723.
+            raise RuntimeError(
+                "openai is required for --llm-model but could not be imported"
+            ) from exc
         kwargs["llm_client"] = OpenAI()
         kwargs["llm_model"] = args.llm_model
         if args.llm_prompt:
@@ -232,7 +329,9 @@ def make_markitdown(args: argparse.Namespace) -> MarkItDown:
     return MarkItDown(**kwargs)
 
 
-def convert_one(md: MarkItDown, input_value: str, args: argparse.Namespace) -> tuple[str, dict[str, Any]]:
+def convert_one(
+    md: MarkItDown, input_value: str, args: argparse.Namespace
+) -> tuple[str, dict[str, Any]]:
     extension = normalize_extension(args.extension)
     stream_info = StreamInfo(
         mimetype=args.mime_type,
@@ -247,13 +346,20 @@ def convert_one(md: MarkItDown, input_value: str, args: argparse.Namespace) -> t
         if not args.allow_remote:
             raise ValueError("remote URL input requires --allow-remote")
         max_bytes = int(args.max_remote_mb * 1024 * 1024)
-        response, final_url, downloaded_bytes = fetch_public_url(input_value, max_bytes=max_bytes, timeout=args.timeout)
+        response, final_url, downloaded_bytes = fetch_public_url(
+            input_value, max_bytes=max_bytes, timeout=args.timeout
+        )
         try:
             remote_info = stream_info.copy_and_update(
                 url=final_url,
                 filename=Path(urlparse(final_url).path).name or None,
             )
-            result = md.convert_response(response, stream_info=remote_info, file_extension=extension, **convert_kwargs)
+            result = md.convert_response(
+                response,
+                stream_info=remote_info,
+                file_extension=extension,
+                **convert_kwargs,
+            )
             markdown = result.text_content or ""
             meta = {
                 "source_type": "remote",
@@ -273,7 +379,9 @@ def convert_one(md: MarkItDown, input_value: str, args: argparse.Namespace) -> t
         raise ValueError(f"input is not a regular file: {path}")
 
     local_info = stream_info.copy_and_update(filename=path.name, local_path=str(path))
-    result = md.convert_local(path, stream_info=local_info, file_extension=extension, **convert_kwargs)
+    result = md.convert_local(
+        path, stream_info=local_info, file_extension=extension, **convert_kwargs
+    )
     markdown = result.text_content or ""
     meta = {
         "source_type": "local",
@@ -318,11 +426,17 @@ def main() -> int:
                     output_path = Path(args.output).expanduser().resolve()
                     reserved_paths.add(output_path)
                 else:
-                    output_name = output_name_for_input(input_value, final_url=summary.get("final_url"))
-                    output_path = unique_output_path(output_dir, output_name, reserved_paths, args.overwrite)
+                    output_name = output_name_for_input(
+                        input_value, final_url=summary.get("final_url")
+                    )
+                    output_path = unique_output_path(
+                        output_dir, output_name, reserved_paths, args.overwrite
+                    )
                 write_markdown(output_path, markdown, overwrite=args.overwrite)
                 summary["output"] = str(output_path)
-                print(f"wrote {output_path} ({len(markdown)} characters)", file=sys.stderr)
+                print(
+                    f"wrote {output_path} ({len(markdown)} characters)", file=sys.stderr
+                )
 
             summary["status"] = "ok"
         except Exception as exc:

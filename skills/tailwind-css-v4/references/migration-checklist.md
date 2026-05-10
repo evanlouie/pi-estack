@@ -3,7 +3,7 @@
 ## First pass
 
 1. Check browser support. Tailwind v4 targets modern browsers including Safari 16.4, Chrome 111, and Firefox 128 or newer. Stay on v3.4 when older browser support is required.
-2. Run the official upgrade tool when possible:
+2. Run the official upgrade tool when possible. It requires Node.js 20 or higher:
 
    ```bash
    npx @tailwindcss/upgrade

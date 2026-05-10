@@ -209,6 +209,7 @@ When adapting Open-JSON-UI into a stricter renderer:
 
 When returning a payload to a user:
 
-1. State the dialect used in one sentence.
-2. Provide the JSON only, unless the user asks for explanation.
-3. If no target renderer schema was provided, include a brief caveat after the JSON that the target renderer may need field-name adjustments.
+1. If the user asks for JSON-only output, provide only valid JSON.
+2. Otherwise, state the dialect used in one sentence before the payload.
+3. Provide the payload as JSON, without markdown fences if the host needs raw JSON.
+4. If no target renderer schema was provided, include a brief caveat after the JSON that the target renderer may need field-name adjustments.

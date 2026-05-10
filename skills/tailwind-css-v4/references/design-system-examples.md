@@ -102,6 +102,6 @@ Keep every utility class complete and statically detectable.
 
 ```css
 @source inline("grid-cols-{1..12}");
-@source inline("{sm:,md:,lg:,}max-w-{screen-sm,screen-md,screen-lg}");
+@source inline("{sm:,md:,lg:,}max-w-{sm,md,lg}");
 @source inline("{hover:,focus:,}bg-brand-{50,100,500,600,700}");
 ```

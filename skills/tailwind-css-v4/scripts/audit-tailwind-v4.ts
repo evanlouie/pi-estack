@@ -213,10 +213,11 @@ const postcssFiles = files.filter(
 
 for (const file of postcssFiles) {
   const body = Deno.readTextFileSync(file);
-  if (
-    /tailwindcss\s*[:),]/.test(body) &&
-    !body.includes("@tailwindcss/postcss")
-  ) {
+  const usesDirectTailwindPostcss =
+    /(?:^|[\s{[,])tailwindcss\s*[:(,\]}]/m.test(body) ||
+    /["']tailwindcss["']/.test(body);
+
+  if (usesDirectTailwindPostcss && !body.includes("@tailwindcss/postcss")) {
     add(
       "error",
       "PostCSS config uses tailwindcss directly",

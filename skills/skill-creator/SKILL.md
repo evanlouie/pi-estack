@@ -58,8 +58,7 @@ uv run scripts/scaffold_skill.py data-cleanup \
 
 uv run scripts/validate_skill.py .agents/skills/data-cleanup
 
-uv run scripts/split_trigger_evals.py .agents/skills/data-cleanup/evals/eval_queries.json \
-  --train-out train_queries.json --validation-out validation_queries.json
+uv run scripts/split_trigger_evals.py .agents/skills/data-cleanup/evals/eval_queries.json
 ```
 
 ## Authoring workflow
@@ -122,7 +121,7 @@ Rules:
 - `description` must be non-empty and at most 1024 characters.
 - Include `compatibility` only for real environment requirements.
 - Include `license` and `metadata` only when useful.
-- Avoid experimental frontmatter unless the target client supports it.
+- Avoid client-specific or experimental frontmatter unless the target client explicitly requires it.
 
 ### 5. Write a triggerable description
 

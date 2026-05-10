@@ -37,9 +37,9 @@ Check the bbin binary directory:
 bbin bin
 ```
 
-Ensure that directory is on the PATH of the running pi/agent process.
+Ensure that directory is on the PATH of the running agent process.
 
-Important: updating a shell startup file may not affect an already-running pi session. After changing PATH, restart the pi session or the parent process that launched pi.
+Important: updating a shell startup file may not affect an already-running agent session. After changing PATH, restart the agent session or the parent process that launched the agent.
 
 If needed, set `BABASHKA_BBIN_BIN_DIR` to a directory already on PATH before installing tools with bbin.
 
@@ -72,7 +72,7 @@ where.exe clj-paren-repair
 clj-paren-repair --help
 ```
 
-The running pi/agent process must be able to resolve `clj-paren-repair` on PATH before the automatic repair extension can use it.
+The running agent process must be able to resolve `clj-paren-repair` on PATH before automatic repair tooling can use it.
 
 ## Notes
 

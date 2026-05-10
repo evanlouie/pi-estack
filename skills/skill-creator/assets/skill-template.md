@@ -3,7 +3,7 @@ name: {{skill-name}}
 description: >
   Use this skill when the user asks to {{primary-intent}}, including {{adjacent-intents-or-implicit-phrasing}}.
   It helps by {{core-actions}}.
-compatibility: {{omit unless specific runtime/client requirements exist}}
+# compatibility: {{specific runtime/client requirements, if any; omit this line if none}}
 metadata:
   version: "0.1.0"
 ---

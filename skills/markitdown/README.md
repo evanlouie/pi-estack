@@ -24,8 +24,7 @@ markitdown/
 ├── SKILL.md
 ├── README.md
 ├── scripts/
-│   ├── convert_to_markdown.py
-│   └── convert_to_markdown.py.lock
+│   └── convert_to_markdown.py
 ├── references/
 │   └── markitdown-reference.md
 └── evals/

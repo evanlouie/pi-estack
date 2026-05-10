@@ -12,8 +12,10 @@ Agent Skill for efficiently reading and parsing Figma files, Figma URLs, Figma n
 
 ## Smoke test
 
+From the package root:
+
 ```bash
-cd figma-file-reader
+cd skills/figma-file-reader
 uv run scripts/figma_read.py parse-url 'https://www.figma.com/design/AbCdEf1234567890/My-App?node-id=12-34'
 uv run scripts/figma_read.py summarize evals/files/sample-figma-file.json
 uv run scripts/figma_read.py tokens evals/files/sample-figma-file.json

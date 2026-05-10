@@ -5,9 +5,7 @@ license: MIT
 compatibility: "Text and JSON authoring. Optional validation script requires Python 3.9+."
 metadata:
   version: "1.0.0"
-  spec_versions:
-    - "A2UI v0.9 draft"
-    - "A2UI v0.8 stable"
+  spec_versions: "A2UI v0.9 draft; A2UI v0.8 stable"
 ---
 
 # A2UI skill

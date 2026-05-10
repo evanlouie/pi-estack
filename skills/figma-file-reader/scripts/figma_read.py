@@ -77,6 +77,13 @@ def normalize_node_id(raw: str | None) -> str | None:
     return value
 
 
+def normalize_node_ids(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    values = [normalized for part in str(raw).split(",") if (normalized := normalize_node_id(part))]
+    return ",".join(values) if values else None
+
+
 def parse_figma_ref(ref: str) -> Json:
     ref = ref.strip()
     result: Json = {
@@ -914,7 +921,7 @@ def cmd_fetch(args: argparse.Namespace) -> int:
     if not key:
         raise FigmaReadError("Could not determine Figma file key. Provide a file key or a Figma URL.")
 
-    ids = args.ids
+    ids = normalize_node_ids(args.ids)
     if not ids and args.endpoint == "nodes" and parsed.get("node_id"):
         ids = parsed["node_id"]
     if args.endpoint in {"nodes", "image"} and not ids:
@@ -997,7 +1004,8 @@ def cmd_summarize(args: argparse.Namespace) -> int:
 
 def cmd_find(args: argparse.Namespace) -> int:
     data = read_json(Path(args.json_file))
-    ids = set(args.ids.split(",")) if args.ids else None
+    normalized_ids = normalize_node_ids(args.ids)
+    ids = set(normalized_ids.split(",")) if normalized_ids else None
     types = set(args.types) if args.types else None
     matches = find_nodes(data, args.name, args.text, ids, types, args.case_sensitive, args.max)
     if args.format == "json":

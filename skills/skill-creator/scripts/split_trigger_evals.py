@@ -71,8 +71,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("queries", help="Path to eval_queries.json")
     parser.add_argument("--train-ratio", type=float, default=0.6, help="Fraction of positives and negatives assigned to train (default: 0.6)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducible splits")
-    parser.add_argument("--train-out", default="train_queries.json", help="Output path for train queries")
-    parser.add_argument("--validation-out", default="validation_queries.json", help="Output path for validation queries")
+    parser.add_argument("--train-out", default=None, help="Output path for train queries (default: next to input file)")
+    parser.add_argument("--validation-out", default=None, help="Output path for validation queries (default: next to input file)")
     args = parser.parse_args(argv)
 
     if not 0 < args.train_ratio < 1:
@@ -80,10 +80,13 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        queries = load_queries(Path(args.queries))
+        queries_path = Path(args.queries)
+        train_out = Path(args.train_out) if args.train_out else queries_path.parent / "train_queries.json"
+        validation_out = Path(args.validation_out) if args.validation_out else queries_path.parent / "validation_queries.json"
+        queries = load_queries(queries_path)
         train, validation = split_balanced(queries, args.train_ratio, args.seed)
-        write_json(Path(args.train_out), train)
-        write_json(Path(args.validation_out), validation)
+        write_json(train_out, train)
+        write_json(validation_out, validation)
     except Exception as exc:  # noqa: BLE001 - CLI error boundary
         print(f"Error: {exc}", file=sys.stderr)
         return 2
@@ -94,8 +97,8 @@ def main(argv: list[str] | None = None) -> int:
         "validation": len(validation),
         "train_should_trigger": sum(1 for q in train if q["should_trigger"]),
         "validation_should_trigger": sum(1 for q in validation if q["should_trigger"]),
-        "train_out": args.train_out,
-        "validation_out": args.validation_out,
+        "train_out": str(train_out),
+        "validation_out": str(validation_out),
     }
     print(json.dumps(summary, indent=2))
     return 0

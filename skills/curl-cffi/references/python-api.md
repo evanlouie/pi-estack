@@ -9,6 +9,7 @@ Prefer explicit imports that make it clear this is not the third-party `requests
 ```python
 from curl_cffi import requests
 from curl_cffi import AsyncSession, CurlError, CurlFollow, CurlHttpVersion, CurlMime
+from curl_cffi.requests import RetryStrategy, exceptions
 ```
 
 If the project also imports `requests`, alias one of them:
@@ -47,6 +48,8 @@ r.json()         # parsed JSON
 r.raise_for_status()
 ```
 
+For high-level request errors, catch `exceptions.RequestException` or specific subclasses such as `exceptions.HTTPError` and `exceptions.Timeout`. Reserve `CurlError` for low-level `Curl` code.
+
 ## Sessions
 
 Use `Session` whenever more than one request may share cookies, headers, connection reuse, impersonation, retry settings, or redirects.
@@ -69,7 +72,8 @@ with requests.Session(impersonate="chrome", timeout=15) as s:
 Use the native retry support for transient failures:
 
 ```python
-from curl_cffi import RetryStrategy, requests
+from curl_cffi import requests
+from curl_cffi.requests import RetryStrategy
 
 strategy = RetryStrategy(count=3, delay=0.2, jitter=0.1, backoff="exponential")
 with requests.Session(retry=strategy, timeout=15) as s:
@@ -136,7 +140,7 @@ from curl_cffi import CurlMime, requests
 mp = CurlMime()
 mp.addpart(name="file", local_path="./image.png", filename="image.png", content_type="image/png")
 try:
-    r = requests.post(url, multipart=mp, timeout=30)
+    r = requests.post(url, multipart=mp, data={"kind": "profile"}, timeout=30)
 finally:
     mp.close()
 ```

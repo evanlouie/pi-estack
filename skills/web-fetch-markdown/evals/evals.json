@@ -14,11 +14,12 @@
     },
     {
       "id": "multi-url-output-dir",
-      "prompt": "I have three public PDF URLs. Download them, convert each to Markdown, and tell me which one discusses pricing.",
-      "expected_output": "The agent runs the script with --output-dir, reviews manifest.jsonl, reads the generated Markdown files, and reports which PDF discusses pricing with source URLs.",
+      "prompt": "Fetch these three public URLs, convert each to Markdown, and tell me which one discusses HTTP: https://example.com/, https://www.iana.org/domains/reserved, https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview",
+      "expected_output": "The agent runs the script with --output-dir, reviews manifest.jsonl, reads the generated Markdown files, and reports that https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview discusses HTTP while distinguishing the other source URLs.",
       "assertions": [
         "The agent uses --output-dir for the multi-document task",
         "The manifest is inspected before using generated Markdown files",
+        "The answer identifies the MDN HTTP overview URL as the source about HTTP",
         "The answer distinguishes source URLs and does not mix documents"
       ]
     },

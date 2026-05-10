@@ -642,7 +642,7 @@ function analyzeClassTokens(rel, text, ext) {
   const classChecks = [
     [
       "important-prefix",
-      /(?:^|[\s"'`{=])(?:[A-Za-z0-9_@-]+:)*![A-Za-z0-9_@\][()./%#-]+/m,
+      /(?:^|[\s"'`{=])(?:[A-Za-z0-9_@-]+:)*!(?:[A-Za-z0-9_@-]+[-/][A-Za-z0-9_@[\][()./%#-]*|absolute\b|block\b|blur\b|border\b|container\b|fixed\b|flex\b|grid\b|hidden\b|inline\b|inline-block\b|relative\b|ring\b|rounded\b|shadow\b|sr-only\b|sticky\b)/m,
       "Found v3-style leading important modifier.",
       "Move ! to the end of the utility in v4, e.g. hover:bg-red-500!.",
     ],

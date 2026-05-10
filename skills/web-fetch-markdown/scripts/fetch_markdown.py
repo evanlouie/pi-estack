@@ -30,17 +30,17 @@ from dataclasses import dataclass, field
 from email.message import Message
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urljoin, urlparse, urlunparse
 
 try:
-    from curl_cffi import AsyncSession
+    from curl_cffi import AsyncSession  # type: ignore
 except Exception as exc:  # pragma: no cover - dependency bootstrap error
     raise SystemExit(
         "Missing dependency curl_cffi. Run with: uv run scripts/fetch_markdown.py ..."
     ) from exc
 
 try:
-    from markitdown import MarkItDown, StreamInfo
+    from markitdown import MarkItDown, StreamInfo  # type: ignore
 except Exception as exc:  # pragma: no cover - dependency bootstrap error
     raise SystemExit(
         "Missing dependency markitdown. Run with: uv run scripts/fetch_markdown.py ..."
@@ -101,6 +101,7 @@ Exit codes:
     parser.add_argument("--timeout", type=float, default=30.0, help="Per-request timeout in seconds. Default: 30.")
     parser.add_argument("--retries", type=int, default=2, help="Retries for transient failures and HTTP 429/5xx. Default: 2.")
     parser.add_argument("--retry-delay", type=float, default=0.5, help="Initial retry delay in seconds; doubles each retry. Default: 0.5.")
+    parser.add_argument("--max-redirects", type=int, default=10, help="Maximum redirects to follow after validating each target. Use 0 to disable redirects. Default: 10.")
     parser.add_argument("--max-bytes", type=int, default=10_000_000, help="Maximum accepted response size after download. Default: 10000000.")
     parser.add_argument("--impersonate", default="chrome", help="curl_cffi browser fingerprint preset, e.g. chrome, safari, firefox, or none. Default: chrome.")
     parser.add_argument("--http-version", choices=["default", "v1", "v2", "v3", "v3only"], default="default", help="HTTP version hint for curl_cffi. Default: default.")
@@ -123,6 +124,8 @@ Exit codes:
         parser.error("--timeout must be positive")
     if args.retries < 0:
         parser.error("--retries must be non-negative")
+    if args.max_redirects < 0 or args.max_redirects > 20:
+        parser.error("--max-redirects must be between 0 and 20")
     if args.max_bytes <= 0:
         parser.error("--max-bytes must be positive")
     if args.stdout_char_limit < 0:
@@ -194,7 +197,7 @@ def validate_public_http_url(url: str, *, allow_private: bool) -> None:
         except socket.gaierror as exc:
             raise ValueError(f"could not resolve hostname {host!r}: {exc}") from exc
         for info in infos:
-            hosts_to_check.add(info[4][0])
+            hosts_to_check.add(str(info[4][0]))
 
     for ip_text in hosts_to_check:
         ip = ipaddress.ip_address(ip_text)
@@ -234,6 +237,10 @@ def cache_key(url: str, args: argparse.Namespace, headers: dict[str, str]) -> st
         "impersonate": None if args.impersonate == "none" else args.impersonate,
         "http_version": None if args.http_version == "default" else args.http_version,
         "proxy": bool(args.proxy),
+        "allow_private": args.allow_private,
+        "max_redirects": args.max_redirects,
+        "max_bytes": args.max_bytes,
+        "fail_on_http_error": args.fail_on_http_error,
     }
     return hashlib.sha256(json.dumps(material, sort_keys=True).encode("utf-8")).hexdigest()
 
@@ -292,6 +299,7 @@ async def fetch_one(
         "content_type": None,
         "bytes": 0,
         "elapsed_ms": None,
+        "redirect_count": 0,
         "cache_hit": False,
         "cache_key": key,
         "error": None,
@@ -299,7 +307,7 @@ async def fetch_one(
     request_kwargs: dict[str, Any] = {
         "headers": headers,
         "timeout": args.timeout,
-        "allow_redirects": True,
+        "allow_redirects": False,
     }
     if args.impersonate != "none":
         request_kwargs["impersonate"] = args.impersonate
@@ -313,25 +321,58 @@ async def fetch_one(
         async with semaphore:
             start = time.perf_counter()
             try:
-                response = await session.get(url, **request_kwargs)
-                elapsed_ms = int((time.perf_counter() - start) * 1000)
-                body = response.content or b""
-                status_code = int(response.status_code)
-                response_headers = {str(k): str(v) for k, v in dict(response.headers).items()}
-                record.update(
-                    {
-                        "final_url": redact_url_credentials(str(response.url)),
-                        "status_code": status_code,
-                        "content_type": response_headers.get("content-type") or response_headers.get("Content-Type"),
-                        "bytes": len(body),
-                        "elapsed_ms": elapsed_ms,
-                        "headers": response_headers,
-                    }
-                )
+                current_url = url
+                redirect_count = 0
 
-                if len(body) > args.max_bytes:
-                    record["error"] = f"response size {len(body)} exceeds --max-bytes {args.max_bytes}"
-                    return Payload(record=record, body=b"", headers=response_headers)
+                while True:
+                    try:
+                        validate_public_http_url(current_url, allow_private=args.allow_private)
+                    except ValueError as exc:
+                        record["final_url"] = redact_url_credentials(current_url)
+                        record["error"] = f"unsafe redirect target: {exc}" if current_url != url else str(exc)
+                        return Payload(record=record)
+
+                    response = await session.get(current_url, **request_kwargs)
+                    elapsed_ms = int((time.perf_counter() - start) * 1000)
+                    body = response.content or b""
+                    status_code = int(response.status_code)
+                    response_headers = {str(k): str(v) for k, v in dict(response.headers).items()}
+                    record.update(
+                        {
+                            "final_url": redact_url_credentials(str(response.url)),
+                            "status_code": status_code,
+                            "content_type": response_headers.get("content-type") or response_headers.get("Content-Type"),
+                            "bytes": len(body),
+                            "elapsed_ms": elapsed_ms,
+                            "redirect_count": redirect_count,
+                            "headers": response_headers,
+                        }
+                    )
+
+                    if len(body) > args.max_bytes:
+                        record["error"] = f"response size {len(body)} exceeds --max-bytes {args.max_bytes}"
+                        return Payload(record=record, body=b"", headers=response_headers)
+
+                    location = header_value(response_headers, "location")
+                    if 300 <= status_code <= 399 and location:
+                        if redirect_count >= args.max_redirects:
+                            record["error"] = f"too many redirects (>{args.max_redirects})"
+                            return Payload(record=record, body=body, headers=response_headers)
+
+                        next_url = urljoin(str(response.url), location)
+                        try:
+                            validate_public_http_url(next_url, allow_private=args.allow_private)
+                        except ValueError as exc:
+                            record["final_url"] = redact_url_credentials(next_url)
+                            record["redirect_count"] = redirect_count + 1
+                            record["error"] = f"unsafe redirect target: {exc}"
+                            return Payload(record=record, body=body, headers=response_headers)
+
+                        current_url = next_url
+                        redirect_count += 1
+                        continue
+
+                    break
 
                 transient = status_code == 429 or 500 <= status_code <= 599
                 if transient and attempt < args.retries:

@@ -215,16 +215,7 @@ Quote string values when they:
 - Contain colon, quote, backslash, brackets, braces, newline, carriage return, tab, or the active delimiter.
 - Are exactly `-` or begin with `-`.
 
-Escapes inside quoted strings and keys are limited to:
-
-```text
-\
-"
-
-
-
-	
-```
+Escapes inside quoted strings and keys are limited to `\\`, `\"`, `\n`, `\r`, and `\t`.
 
 Do not invent other escapes such as `\xNN` or `\uNNNN`.
 

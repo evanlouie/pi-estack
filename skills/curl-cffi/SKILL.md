@@ -36,7 +36,7 @@ Use `curl_cffi` for authorized HTTP/API clients, diagnostics, compatibility test
    - Keep TLS verification enabled unless the user is explicitly debugging a local MITM proxy or test certificate.
 4. Validate the result:
    - Run unit tests or a small smoke request against a user-approved target.
-   - For code generation, include error handling around `HTTPError`, `CurlError`, and timeout/network failures.
+   - For code generation, handle `curl_cffi.requests.exceptions.RequestException`/`HTTPError`/`Timeout` for the requests-like API; handle `CurlError` for low-level `Curl` code.
    - For CLI diagnostics, capture headers/status and show the exact command used.
 
 ## Core code patterns
@@ -86,7 +86,7 @@ async def fetch_all(urls: list[str]) -> list[str]:
 
 ### Multipart upload
 
-Do not use the `requests` package’s `files=` pattern. Use `CurlMime`:
+Do not use the `requests` package’s `files=` pattern. Use `CurlMime`; pass ordinary multipart form fields through `data=`:
 
 ```python
 from curl_cffi import CurlMime, requests
@@ -99,7 +99,12 @@ mp.addpart(
     local_path="./report.csv",
 )
 try:
-    r = requests.post("https://example.com/upload", multipart=mp, timeout=30)
+    r = requests.post(
+        "https://example.com/upload",
+        multipart=mp,
+        data={"kind": "sales"},
+        timeout=30,
+    )
     r.raise_for_status()
 finally:
     mp.close()

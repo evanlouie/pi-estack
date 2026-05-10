@@ -69,7 +69,6 @@ const BASE_RENAMES = new Map([
   ["ring", "ring-3"],
   ["flex-shrink", "shrink"],
   ["flex-shrink-0", "shrink-0"],
-  ["flex-shrink", "shrink"],
   ["flex-grow", "grow"],
   ["flex-grow-0", "grow-0"],
   ["overflow-ellipsis", "text-ellipsis"],
@@ -103,14 +102,7 @@ let totalChanges = 0;
 
 for (const file of files) {
   const original = fs.readFileSync(file, "utf8");
-  const changes = [];
-  const updated = original.replace(TOKEN_RE, (token, offset) => {
-    const next = transformToken(token);
-    if (next !== token) {
-      changes.push({ from: token, to: next, line: lineAt(original, offset) });
-    }
-    return next;
-  });
+  const { updated, changes } = transformFile(original);
   if (changes.length) {
     totalChanges += changes.length;
     fileReports.push({
@@ -201,6 +193,130 @@ function walk(root, maxBytes) {
   return results.sort((a, b) => a.localeCompare(b));
 }
 
+function transformFile(text) {
+  const changes = [];
+  const ranges = collectTransformRanges(text);
+  if (ranges.length === 0) return { updated: text, changes };
+
+  let updated = "";
+  let cursor = 0;
+  for (const range of ranges) {
+    updated += text.slice(cursor, range.start);
+    updated += transformSegment(
+      text.slice(range.start, range.end),
+      range.start,
+    );
+    cursor = range.end;
+  }
+  updated += text.slice(cursor);
+  return { updated, changes };
+
+  function transformSegment(segment, baseOffset) {
+    return segment.replace(TOKEN_RE, (token, offset) => {
+      const next = transformToken(token);
+      if (next !== token) {
+        changes.push({
+          from: token,
+          to: next,
+          line: lineAt(text, baseOffset + offset),
+        });
+      }
+      return next;
+    });
+  }
+}
+
+function collectTransformRanges(text) {
+  const ranges = [];
+
+  // Transform string literal contents, where class lists usually live in JSX,
+  // templates, JSON, HTML attributes, and framework component files. Skip
+  // interpolated template literals because their embedded expressions can
+  // contain ordinary JavaScript that must not be rewritten as class tokens.
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "/" && isLikelyRegexStart(text, i)) {
+      i = skipRegexLiteral(text, i);
+      continue;
+    }
+
+    const quote = text[i];
+    if (quote !== '"' && quote !== "'" && quote !== "`") continue;
+
+    const start = i + 1;
+    i++;
+    let escaped = false;
+    while (i < text.length) {
+      const char = text[i];
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === quote) {
+        const content = text.slice(start, i);
+        if (quote !== "`" || !content.includes("${")) addRange(start, i);
+        break;
+      }
+      i++;
+    }
+  }
+
+  // Transform tokens inside CSS @apply declarations, which are not quoted.
+  const applyRegex = /@apply\s+([^;]+);/g;
+  let match;
+  while ((match = applyRegex.exec(text))) {
+    addRange(
+      match.index + match[0].indexOf(match[1]),
+      match.index + match[0].indexOf(match[1]) + match[1].length,
+    );
+  }
+
+  return ranges
+    .sort((a, b) => a.start - b.start)
+    .filter((range, index, sorted) => {
+      const previous = sorted[index - 1];
+      return !previous || range.start >= previous.end;
+    });
+
+  function addRange(start, end) {
+    if (start < end) ranges.push({ start, end });
+  }
+}
+
+function isLikelyRegexStart(text, index) {
+  const next = text[index + 1];
+  if (next === "/" || next === "*") return false;
+  const prev = previousNonWhitespace(text, index - 1);
+  return prev === "" || "([{=,:;!&|?".includes(prev);
+}
+
+function previousNonWhitespace(text, index) {
+  for (let i = index; i >= 0; i--) {
+    if (!/\s/.test(text[i])) return text[i];
+  }
+  return "";
+}
+
+function skipRegexLiteral(text, start) {
+  let escaped = false;
+  let inCharacterClass = false;
+  for (let i = start + 1; i < text.length; i++) {
+    const char = text[i];
+    if (escaped) {
+      escaped = false;
+    } else if (char === "\\") {
+      escaped = true;
+    } else if (char === "[") {
+      inCharacterClass = true;
+    } else if (char === "]") {
+      inCharacterClass = false;
+    } else if (char === "/" && !inCharacterClass) {
+      while (/[a-z]/i.test(text[i + 1] || "")) i++;
+      return i;
+    }
+  }
+  return start;
+}
+
 function transformToken(token) {
   let transformed = token;
 
@@ -211,7 +327,6 @@ function transformToken(token) {
   );
 
   // v4 important modifier: hover:!bg-red-500 -> hover:bg-red-500!
-  transformed = transformed.split(/(?<=:)/).join(""); // no-op guard to keep old Node parsers from optimizing weirdly
   transformed = moveImportantMarker(transformed);
 
   // Rewrite the base utility after variant prefixes.
@@ -227,7 +342,9 @@ function moveImportantMarker(token) {
   const parts = splitVariants(token);
   const base = parts.pop() || "";
   if (base.startsWith("!") && base.length > 1) {
-    parts.push(base.slice(1) + "!");
+    const unimportantBase = base.slice(1);
+    if (!isLikelyTailwindClass(unimportantBase)) return token;
+    parts.push(unimportantBase + "!");
     return parts.join(":");
   }
   return token;
@@ -247,6 +364,26 @@ function rewriteBaseUtility(token) {
   const nextBase = negative ? `-${renamed}` : renamed;
   parts.push(nextBase + (important ? "!" : ""));
   return parts.join(":");
+}
+
+function isLikelyTailwindClass(base) {
+  if (!base || !/^[A-Za-z0-9_@-]/.test(base)) return false;
+  if (BASE_RENAMES.has(base.replace(/^-/, ""))) return true;
+  if (/[-/]/.test(base)) return true;
+  return new Set([
+    "absolute",
+    "block",
+    "container",
+    "fixed",
+    "flex",
+    "grid",
+    "hidden",
+    "inline",
+    "inline-block",
+    "relative",
+    "sr-only",
+    "sticky",
+  ]).has(base);
 }
 
 function splitVariants(token) {

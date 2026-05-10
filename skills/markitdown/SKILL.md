@@ -2,7 +2,7 @@
 name: markitdown
 description: Use this skill when a user asks to convert files, documents, Office files, PDFs, spreadsheets, slides, HTML, CSV, JSON, XML, images, audio, ZIP archives, EPubs, YouTube links, or trusted public URLs into Markdown using Microsoft MarkItDown; extract LLM-ready Markdown text; batch-convert documents; troubleshoot MarkItDown output; or use MarkItDown plugins, Azure Document Intelligence, or optional LLM image descriptions.
 license: MIT
-compatibility: Requires Python 3.10+ and uv. The bundled script installs markitdown[all]>=0.1.5,<0.2 in an isolated uv environment. Some conversions may require network access, API credentials, or third-party plugins when explicitly requested.
+compatibility: Requires Python >=3.10,<3.14 and uv. The bundled script installs markitdown[all]>=0.1.5,<0.2 in an isolated uv environment. Some conversions may require network access, API credentials, or third-party plugins when explicitly requested.
 metadata:
   source: https://github.com/microsoft/markitdown
   skill_version: "1.0.0"

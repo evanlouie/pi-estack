@@ -4,7 +4,7 @@ A skill for writing, reviewing, and debugging Python code that uses `curl_cffi` 
 
 ## Install
 
-Copy the `curl-cffi` directory into a skills directory such as:
+Copy the `curl-cffi` directory into an Agent Skills directory such as:
 
 ```text
 .agents/skills/curl-cffi/

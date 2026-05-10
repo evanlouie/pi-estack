@@ -45,7 +45,7 @@ markitdown INPUT -o OUTPUT.md
 markitdown INPUT --extension .pdf --mime-type application/pdf --charset UTF-8 -o OUTPUT.md
 markitdown INPUT --use-plugins -o OUTPUT.md
 markitdown --list-plugins
-markitdown INPUT --use-docintel --endpoint "$AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT" -o OUTPUT.md
+markitdown INPUT -d -e "$AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT" -o OUTPUT.md
 ```
 
 Bundled helper script:

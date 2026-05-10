@@ -63,16 +63,21 @@ r = requests.get(url, http_version="v1", timeout=15)
 
 ## Cookies
 
-Do not use a plain dictionary dump/load for durable cookies when cookie metadata matters. Use the session cookie jar or a cookie-jar-aware persistence strategy.
+Do not use a plain dictionary dump/load for durable cookies when cookie metadata matters. Use the session cookie jar or a cookie-jar-aware persistence strategy, and never load pickled cookies from an untrusted source.
 
 ```python
-import pickle
+from http.cookiejar import MozillaCookieJar
 from curl_cffi import requests
 
-with requests.Session() as s:
+jar = MozillaCookieJar("cookies.txt")
+try:
+    jar.load(ignore_discard=True, ignore_expires=True)
+except FileNotFoundError:
+    pass
+
+with requests.Session(cookies=jar) as s:
     s.get("https://example.com")
-    with open("cookies.pk", "wb") as f:
-        pickle.dump(s.cookies.jar._cookies, f)
+    jar.save(ignore_discard=True, ignore_expires=True)
 ```
 
 For redirect flows, prefer `session.cookies` over `response.cookies`; response cookies may only represent the current response.
@@ -126,5 +131,5 @@ If packaged binaries fail only on a target host, compare platform, Python, cert 
 - [ ] Avoid logging secrets, cookies, authorization headers, or proxy credentials.
 - [ ] Rate-limit and back off; do not overwhelm targets.
 - [ ] Reuse sessions where appropriate, but isolate sessions across tenants/users.
-- [ ] Handle `HTTPError`, `CurlError`, WebSocket errors, and JSON decoding failures.
+- [ ] Handle `curl_cffi.requests.exceptions.RequestException`/`HTTPError`/`Timeout` for high-level requests, `CurlError` for low-level `Curl`, WebSocket errors, and JSON decoding failures.
 - [ ] Include a fallback HTTP version when HTTP/3 or HTTP/2 support varies by target/proxy.
