@@ -10,7 +10,8 @@ Use this as the operational checklist after the skill activates.
 - Identify package manager from lockfiles:
   - `pnpm-lock.yaml` → `pnpm`
   - `yarn.lock` → `yarn`
-  - `bun.lock`/`bun.lockb` → `bun`
+  - `bun.lock` or `bun.lockb` → `bun`
+  - `deno.lock` → `deno`
   - `package-lock.json` → `npm`
 - Find Tailwind entry CSS files, `tailwind.config.*`, PostCSS/Vite configs, CLI scripts, and framework files using `@apply`.
 
@@ -32,13 +33,13 @@ Use a clean branch:
 npx @tailwindcss/upgrade
 ```
 
-For non-npm package managers, use the local equivalent only if that is normal for the project, such as `pnpm dlx @tailwindcss/upgrade` or `yarn dlx @tailwindcss/upgrade`.
+For non-npm package managers, use the local equivalent only if that is normal for the project, such as `pnpm dlx @tailwindcss/upgrade`, `yarn dlx @tailwindcss/upgrade`, or `bunx @tailwindcss/upgrade`.
 
 After running:
 
 ```bash
 git status --short
-git diff -- package.json pnpm-lock.yaml package-lock.json yarn.lock bun.lockb bun.lock
+git diff -- package.json pnpm-lock.yaml package-lock.json yarn.lock bun.lock bun.lockb deno.lock
 git diff -- '*.css' '*.scss' '*.sass' '*.less' '*.styl' '*.js' '*.jsx' '*.ts' '*.tsx' '*.vue' '*.svelte' '*.astro'
 ```
 
@@ -195,7 +196,7 @@ npm test
 npm run build
 ```
 
-Adapt for `pnpm`, `yarn`, or `bun`.
+Adapt for `pnpm`, `yarn`, `bun`, or `deno`.
 
 Also run a browser review for:
 

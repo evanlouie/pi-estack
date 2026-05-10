@@ -27,19 +27,19 @@ The directory name must remain `toon` because the `name` field in `SKILL.md` mus
 
 ## Script
 
-The bundled script is a self-contained Bun TypeScript wrapper around the pinned official CLI, `npx @toon-format/cli@2.2.0`. It requires Bun plus Node/npm/npx.
+The bundled script is a self-contained Deno TypeScript wrapper around the pinned official CLI, `npx @toon-format/cli@2.2.0`. It requires Deno plus Node/npm/npx.
 
 ```bash
-bun run scripts/toon.ts --help
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts --help
 ```
 
 Common commands:
 
 ```bash
-bun run scripts/toon.ts encode input.json -o output.toon
-bun run scripts/toon.ts decode input.toon -o output.json
-bun run scripts/toon.ts validate input.toon
-bun run scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json -o output.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode input.toon -o output.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate input.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
 ```
 
 ## Sources

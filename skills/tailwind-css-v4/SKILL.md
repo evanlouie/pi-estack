@@ -3,7 +3,7 @@ name: tailwind-css-v4
 description: >-
   Use this skill when installing, upgrading, configuring, debugging, or writing code for Tailwind CSS v4.x projects. Prefer CSS-first v4 patterns such as @import "tailwindcss", @theme, @utility, @source, @custom-variant, and @reference; use it for v3-to-v4 migrations, build errors, Vite/PostCSS/CLI setup, theme tokens, variants, dark mode, and utility-class correctness.
 license: MIT
-compatibility: Tailwind CSS v4.x; Bun is required only for the optional bundled audit script; Node.js/npm, pnpm, yarn, or Bun project commands depend on the target project.
+compatibility: Tailwind CSS v4.x; Deno is required only for the optional bundled audit script; Node.js/npm, pnpm, yarn, Bun, or Deno project commands depend on the target project.
 metadata:
   version: "1.0.4"
   tailwind_major: "4"
@@ -26,7 +26,7 @@ Do not use this skill for generic CSS questions that do not involve Tailwind, or
    - Vite projects: use `tailwindcss` plus `@tailwindcss/vite`.
    - PostCSS projects such as many Next.js or Angular setups: use `tailwindcss`, `@tailwindcss/postcss`, and `postcss`.
    - Static or minimal projects: use `tailwindcss` plus `@tailwindcss/cli`.
-4. Use the existing project package manager and lockfile style. Do not mix npm, pnpm, yarn, or bun unless the user asks; the bundled audit script runs with Bun separately and should not change the target project package manager.
+4. Use the existing project package manager and lockfile style. Do not mix npm, pnpm, yarn, Bun, or Deno unless the user asks; the bundled audit script runs with Deno separately and should not change the target project package manager.
 5. After edits, run the smallest relevant validation command available: a build, typecheck, lint, or framework dev/build command. If running commands is not appropriate, tell the user exactly what to run.
 6. For exact package versions or latest minor-release features, verify current Tailwind docs or release notes because v4.x evolves.
 
@@ -129,11 +129,11 @@ Read `references/migration-checklist.md` for the detailed v3-to-v4 migration che
 
 ## Project auditing
 
-An optional non-destructive self-contained ESM Bun helper script is bundled:
+An optional non-destructive self-contained Deno TypeScript helper script is bundled:
 
 ```bash
-bun run scripts/audit-tailwind-v4.ts /path/to/project
-bun run scripts/audit-tailwind-v4.ts /path/to/project --json
+deno run --allow-read scripts/audit-tailwind-v4.ts /path/to/project
+deno run --allow-read scripts/audit-tailwind-v4.ts /path/to/project --json
 ```
 
 Use it when debugging or migrating an existing project. Treat its findings as heuristics, not a replacement for reading the relevant files.

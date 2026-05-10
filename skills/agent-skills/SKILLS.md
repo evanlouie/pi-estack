@@ -55,7 +55,7 @@ console.log($("p.info").text());
 
 ### Deno
 
-Deno’s npm: and jsr: import specifiers make every script self-contained by default:
+Deno’s npm: and jsr: import specifiers make every TypeScript script self-contained by default. Pin versions directly in import specifiers:
 
 ```ts
 #!/usr/bin/env -S deno run

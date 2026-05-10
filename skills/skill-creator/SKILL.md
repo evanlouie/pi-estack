@@ -7,7 +7,7 @@ description: >
   skill from a completed workflow or project artifacts.
 compatibility: Requires Python 3.11+ and uv to run bundled Python scripts; no network access required for normal use.
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   docs-reviewed: "2026-05-10"
 ---
 
@@ -185,7 +185,7 @@ Avoid vague references such as “see references for details.” The agent needs
 
 Bundle a script when the agent would otherwise repeatedly reinvent parsing, validation, generation, or scoring logic. Scripts should be self-contained, non-interactive, documented with `--help`, and safe to retry. See `references/script-design-guide.md` before adding scripts.
 
-For Python scripts, use PEP 723 metadata and run with `uv run`. For TypeScript, use Bun and pin packages in import paths. Prefer structured stdout and diagnostics on stderr.
+For Python scripts, use PEP 723 metadata and run with `uv run`. For TypeScript scripts, use Deno and pin package versions in import specifiers (for example, `npm:pkg@version`). Prefer structured stdout and diagnostics on stderr.
 
 ### 9. Add evals before treating the skill as done
 

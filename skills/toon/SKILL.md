@@ -2,7 +2,7 @@
 name: toon
 description: Use this skill when the user asks to convert JSON to or from TOON, author or validate .toon files, compact structured data for LLM prompts, choose delimiters/key folding/path expansion, compare TOON with JSON/YAML/CSV, or use the @toon-format/toon CLI/API.
 license: MIT
-compatibility: Requires Bun plus Node/npm/npx for bundled scripts/toon.ts, which wraps npx @toon-format/cli@2.2.0. Agents may run the official npx CLI directly when Bun is unavailable.
+compatibility: Requires Deno plus Node/npm/npx for bundled scripts/toon.ts, which wraps npx @toon-format/cli@2.2.0. Agents may run the official npx CLI directly when Deno is unavailable.
 metadata:
   source_repository: "https://github.com/toon-format/toon"
   specification_repository: "https://github.com/toon-format/spec"
@@ -34,29 +34,29 @@ TOON (Token-Oriented Object Notation) is a compact, line-oriented, indentation-b
 Run from the skill root:
 
 ```bash
-bun run scripts/toon.ts encode input.json -o output.toon
-bun run scripts/toon.ts decode data.toon -o output.json
-bun run scripts/toon.ts validate data.toon
-bun run scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json -o output.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode data.toon -o output.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate data.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
 ```
 
 Useful options:
 
 ```bash
 # Tab delimiter for large tabular data
-bun run scripts/toon.ts encode data.json --delimiter tab -o data.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --delimiter tab -o data.toon
 
 # Pipe delimiter when commas are common in values
-bun run scripts/toon.ts encode data.json --delimiter pipe -o data.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --delimiter pipe -o data.toon
 
 # Collapse safe single-key wrapper chains
-bun run scripts/toon.ts encode data.json --keyFolding safe -o folded.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --keyFolding safe -o folded.toon
 
 # Reconstruct folded dotted paths while decoding
-bun run scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
-When Bun is unavailable but Node/npm are available, use the official CLI:
+When Deno is unavailable but Node/npm are available, use the official CLI:
 
 ```bash
 npx @toon-format/cli@2.2.0 input.json -o output.toon
@@ -159,14 +159,14 @@ user.name: Ada
 Only decode them into nested objects when the user wants folded paths expanded:
 
 ```bash
-bun run scripts/toon.ts decode data.toon --expandPaths safe
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode data.toon --expandPaths safe
 ```
 
 Use paired options for round-trips:
 
 ```bash
-bun run scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
-bun run scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
 ## Prompting with TOON

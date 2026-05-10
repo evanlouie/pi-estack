@@ -16,7 +16,6 @@ import argparse
 import ast
 import json
 import re
-import sys
 import textwrap
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -286,8 +285,8 @@ def validate_scripts(skill_dir: Path, issues: list[Issue]) -> None:
                 add_issue(issues, "warning", "script-help-not-obvious", f"Script `{rel}` may not document a --help interface", rel)
         elif script.suffix == ".ts":
             first_line = text.splitlines()[0] if text.splitlines() else ""
-            if "bun" not in first_line:
-                add_issue(issues, "warning", "typescript-script-not-bun", f"TypeScript script `{rel}` should use a Bun shebang", rel)
+            if "deno" not in first_line:
+                add_issue(issues, "warning", "typescript-script-not-deno", f"TypeScript script `{rel}` should use a Deno shebang", rel)
         if script.suffix != ".py" and ("read -p" in text or "prompt(" in text):
             add_issue(issues, "warning", "script-may-be-interactive", f"Script `{rel}` may prompt interactively", rel)
 

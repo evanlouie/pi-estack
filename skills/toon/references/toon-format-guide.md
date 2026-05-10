@@ -52,10 +52,10 @@ Avoid or benchmark TOON when:
 Bundled script:
 
 ```bash
-bun run scripts/toon.ts encode input.json -o output.toon
-bun run scripts/toon.ts decode input.toon -o output.json
-bun run scripts/toon.ts validate input.toon
-bun run scripts/toon.ts roundtrip input.json --toon-output encoded.toon -o restored.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json -o output.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode input.toon -o output.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate input.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts roundtrip input.json --toon-output encoded.toon -o restored.json
 ```
 
 Official CLI:
@@ -69,9 +69,9 @@ npx @toon-format/cli@2.2.0 input.json --stats
 Stdin examples:
 
 ```bash
-cat data.json | bun run scripts/toon.ts encode > data.toon
-cat data.toon | bun run scripts/toon.ts decode > data.json
-echo '{"name":"Ada","role":"dev"}' | bun run scripts/toon.ts encode
+cat data.json | deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode > data.toon
+cat data.toon | deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode > data.json
+echo '{"name":"Ada","role":"dev"}' | deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode
 ```
 
 ## TypeScript API
@@ -295,7 +295,7 @@ items[2|]{sku|name}:
 Tab uses actual tab characters in the bracket, fields, and rows. Prefer a tool for tab-delimited output:
 
 ```bash
-bun run scripts/toon.ts encode data.json --delimiter tab -o data.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode data.json --delimiter tab -o data.toon
 ```
 
 Delimiter strategy:
@@ -321,8 +321,8 @@ data.metadata.items[2]: a,b
 Round-trip safely by pairing encode and decode options:
 
 ```bash
-bun run scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
-bun run scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
 Safe folding only folds identifier-like segments and avoids collisions. Do not enable path expansion unless the user wants dotted keys reconstructed as nested objects.
@@ -344,7 +344,7 @@ Strict decoding should fail on:
 Use:
 
 ```bash
-bun run scripts/toon.ts validate data.toon
+deno run --allow-read --allow-write --allow-env --allow-run=npx scripts/toon.ts validate data.toon
 ```
 
 Expected structured result:

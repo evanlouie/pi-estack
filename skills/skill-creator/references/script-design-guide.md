@@ -43,15 +43,15 @@ uv run scripts/example.py --help
 
 ## TypeScript scripts
 
-Use Bun for TypeScript. Pin package versions in import paths.
+Use Deno for TypeScript. Pin package versions in import specifiers, including `npm:` package specifiers.
 
 ```ts
-#!/usr/bin/env bun
+#!/usr/bin/env -S deno run --allow-read
 
-import * as cheerio from "cheerio@1.0.0";
+import * as cheerio from "npm:cheerio@1.0.0";
 ```
 
-No `package.json` or `node_modules` is needed unless the user explicitly wants a package project. Be aware that a `node_modules` directory higher in the tree disables Bun’s auto-install behavior.
+No `package.json` or `node_modules` is needed unless the user explicitly wants a package project. Declare required Deno permissions in the shebang or usage examples and prefer the least privileges needed for the script.
 
 ## Agent-friendly CLI requirements
 
