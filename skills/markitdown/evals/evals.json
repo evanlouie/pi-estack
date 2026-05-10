@@ -1,0 +1,30 @@
+{
+  "skill_name": "markitdown",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Convert ./samples/report.pdf to Markdown and save it in ./converted.",
+      "expected_output": "Runs the bundled conversion script with the local PDF path and --output-dir ./converted, then reports the generated Markdown path and verifies it is non-empty."
+    },
+    {
+      "id": 2,
+      "prompt": "I have a folder of docx and pptx files. Batch convert them to markdown files for an LLM index.",
+      "expected_output": "Uses scripts/convert_to_markdown.py with multiple local Office file inputs and an output directory, not one manual command per file unless globbing is unavailable."
+    },
+    {
+      "id": 3,
+      "prompt": "Turn this public webpage into markdown: https://example.com/page.html",
+      "expected_output": "Uses --allow-remote with the helper script, preserving remote safety checks; does not call a broad URL converter without validation."
+    },
+    {
+      "id": 4,
+      "prompt": "This scanned PDF is coming out blank. Use Azure Document Intelligence with my endpoint to extract it.",
+      "expected_output": "Uses --docintel-endpoint after confirming the endpoint/credentials are available and notes that the document will be sent to Azure."
+    },
+    {
+      "id": 5,
+      "prompt": "Use the installed MarkItDown OCR plugin on this file.",
+      "expected_output": "Checks or uses plugin mode explicitly with --use-plugins; does not enable plugins by default for unrelated conversions."
+    }
+  ]
+}

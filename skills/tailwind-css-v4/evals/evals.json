@@ -1,0 +1,45 @@
+{
+  "skill_name": "tailwind-css-v4",
+  "evals": [
+    {
+      "id": "vite-install",
+      "prompt": "Set up Tailwind CSS v4 in this Vite project and add one custom brand color token.",
+      "expected_output": "Uses tailwindcss and @tailwindcss/vite, configures the Vite plugin, imports Tailwind with @import \"tailwindcss\", and defines the token in @theme.",
+      "assertions": [
+        "Does not use @tailwind base/components/utilities",
+        "Does not create tailwind.config.js unless explicitly needed",
+        "Uses @theme for the brand token"
+      ]
+    },
+    {
+      "id": "postcss-error",
+      "prompt": "Fix this Tailwind v4 error: it looks like you're trying to use tailwindcss directly as a PostCSS plugin.",
+      "expected_output": "Explains that v4 uses @tailwindcss/postcss, updates dependencies/config, and keeps @import \"tailwindcss\" in CSS.",
+      "assertions": [
+        "Installs or recommends @tailwindcss/postcss",
+        "Removes tailwindcss as a PostCSS plugin",
+        "Does not recommend npx tailwindcss init"
+      ]
+    },
+    {
+      "id": "dynamic-class-debug",
+      "prompt": "In my Tailwind v4 React component, className={`bg-${color}-600`} doesn't work. Fix it.",
+      "expected_output": "Explains static source scanning and replaces dynamic class construction with a map of complete class names.",
+      "assertions": [
+        "Mentions that Tailwind scans source files as text",
+        "Provides complete static class names",
+        "Does not rely on safelist as the primary solution"
+      ]
+    },
+    {
+      "id": "v3-migration",
+      "prompt": "Migrate a Tailwind v3 config with content, safelist, theme.extend.colors, and darkMode selector to v4 CSS-first configuration.",
+      "expected_output": "Moves theme tokens to @theme, source/safelist to @source and @source inline(), and dark mode to @custom-variant while noting @config only as temporary compatibility.",
+      "assertions": [
+        "Uses @theme for colors",
+        "Uses @source inline() for safelisting",
+        "Uses @custom-variant dark for selector-driven dark mode"
+      ]
+    }
+  ]
+}

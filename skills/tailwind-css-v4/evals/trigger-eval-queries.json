@@ -1,0 +1,42 @@
+[
+  {
+    "query": "Upgrade this React app from Tailwind v3 to v4 and fix the PostCSS error about using tailwindcss directly as a plugin.",
+    "should_trigger": true
+  },
+  {
+    "query": "Set up Tailwind 4 with Vite and add a brand color token.",
+    "should_trigger": true
+  },
+  {
+    "query": "Why are my bg-${color}-500 classes not being generated in Tailwind CSS v4?",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a CSS-first Tailwind theme with @theme, dark mode, and a custom btn utility.",
+    "should_trigger": true
+  },
+  {
+    "query": "My Next.js app says the Tailwind PostCSS plugin moved. Update the config.",
+    "should_trigger": true
+  },
+  {
+    "query": "Replace tailwind.config.js content and safelist settings with the v4 approach.",
+    "should_trigger": true
+  },
+  {
+    "query": "What classes should I use for a responsive card grid? No Tailwind project changes, just give CSS ideas.",
+    "should_trigger": false
+  },
+  {
+    "query": "Explain the difference between CSS Grid and Flexbox.",
+    "should_trigger": false
+  },
+  {
+    "query": "Write regular CSS for a button without any frameworks.",
+    "should_trigger": false
+  },
+  {
+    "query": "How do I center a div with plain CSS?",
+    "should_trigger": false
+  }
+]

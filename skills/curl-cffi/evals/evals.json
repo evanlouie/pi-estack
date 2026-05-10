@@ -1,0 +1,52 @@
+{
+  "skill_name": "curl-cffi",
+  "evals": [
+    {
+      "id": "session-safe-redirects",
+      "prompt": "Write a FastAPI endpoint that fetches a user-provided URL with curl_cffi and returns the page title. It must be safe against redirects to internal IPs.",
+      "expected_output": "A FastAPI example using curl_cffi requests or Session with timeout and CurlFollow.SAFE or allow_redirects=\"safe\", plus basic URL validation and error handling.",
+      "assertions": [
+        "Uses curl_cffi rather than the third-party requests package",
+        "Sets allow_redirects to CurlFollow.SAFE or \"safe\"",
+        "Includes a timeout",
+        "Does not set verify=False as a default",
+        "Mentions SSRF or internal/private IP redirect protection"
+      ]
+    },
+    {
+      "id": "multipart-migration",
+      "prompt": "Migrate this requests code to curl_cffi: requests.post(url, files={'file': open('report.csv','rb')}, data={'kind':'sales'})",
+      "expected_output": "A curl_cffi version that uses CurlMime and multipart= instead of files=, preserves form fields, closes the file/mime resources, and checks response status.",
+      "assertions": [
+        "Does not use files= in the curl_cffi request",
+        "Uses CurlMime or an equivalent curl_cffi multipart API",
+        "Includes data={'kind': 'sales'} or equivalent form field handling",
+        "Closes file or multipart resources",
+        "Calls raise_for_status or otherwise handles non-2xx status"
+      ]
+    },
+    {
+      "id": "http2-protocol-error",
+      "prompt": "I get curl_cffi HTTP/2 stream 0 PROTOCOL_ERROR through my proxy. Give me a practical debugging sequence and a code snippet to force HTTP/1.1.",
+      "expected_output": "Troubleshooting steps covering Content-Length, proxy isolation, browser comparison, trying a better proxy, and a curl_cffi snippet using CurlHttpVersion.V1_1 or http_version='v1'.",
+      "assertions": [
+        "Suggests removing manual Content-Length if present",
+        "Suggests testing without the proxy or with a different proxy",
+        "Includes code forcing HTTP/1.1",
+        "Does not claim HTTP/2 PROTOCOL_ERROR has a single guaranteed cause"
+      ]
+    },
+    {
+      "id": "async-concurrency",
+      "prompt": "Build an async function that fetches 200 URLs with curl_cffi using Chrome impersonation, a concurrency limit, retries, and JSON parsing.",
+      "expected_output": "An async implementation using AsyncSession, max_clients or a semaphore, impersonate='chrome', timeout, retry strategy or retry count, response status checks, and robust JSON parsing/error handling.",
+      "assertions": [
+        "Uses AsyncSession",
+        "Sets impersonate='chrome' or equivalent session-level impersonation",
+        "Includes a concurrency control mechanism",
+        "Includes timeout and retry handling",
+        "Handles failed requests or JSON parse failures without crashing the whole batch unnecessarily"
+      ]
+    }
+  ]
+}

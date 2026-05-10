@@ -1,43 +1,89 @@
 ---
 name: tailwind-css-v4
-description: Guidance and documentation for Tailwind CSS v4, v4.1, and v4.2, especially migrations from Tailwind CSS v3. Use when upgrading Tailwind, reviewing v3-to-v4 breaking changes, converting tailwind.config.js to CSS-first @theme/@utility/@custom-variant/@variant APIs, configuring Vite/PostCSS/CLI/webpack integrations, safelisting or source detection with @source, debugging v4 visual regressions, or explaining v4.1/v4.2 utilities and compatibility changes.
+description: >-
+  Use this skill when installing, upgrading, configuring, debugging, or writing code for Tailwind CSS v4.x projects. Prefer CSS-first v4 patterns such as @import "tailwindcss", @theme, @utility, @source, @custom-variant, and @reference; use it for v3-to-v4 migrations, build errors, Vite/PostCSS/CLI setup, theme tokens, variants, dark mode, and utility-class correctness.
+license: MIT
+compatibility: Tailwind CSS v4.x; Node.js/npm only needed for project commands or the optional audit script.
+metadata:
+  version: "1.0.0"
+  tailwind_major: "4"
+  author: "OpenAI"
 ---
 
-# Tailwind CSS v4 Migration and Documentation
+# Tailwind CSS v4.x
 
-Use this skill when a user asks about Tailwind CSS v4, v4.1, v4.2, or migrating a project from Tailwind CSS v3.
+## When to use this skill
 
-## Core stance
+Use this skill for tasks involving Tailwind CSS v4.x setup, migration, styling, design tokens, CSS-first configuration, source scanning, custom utilities, variants, dark mode, or build/runtime errors. Also use it when the user asks about Tailwind v4 specifically, upgrades from v3, or symptoms caused by mixing v3 and v4 APIs.
 
-- Treat v4 as a CSS-first framework: prefer `@import "tailwindcss"`, `@theme`, `@utility`, `@variant`, `@custom-variant`, `@source`, `@plugin`, `@config`, and `@reference` over v3-style JavaScript configuration.
-- For v3 upgrades, recommend a clean git branch and the official upgrade tool first, then manual review for visual regressions.
-- Always verify the project's actual installed version from `package.json` and lockfiles before giving version-specific advice.
-- Do not assume v3 behavior still applies. In v4, defaults for borders, rings, placeholders, hover behavior, stacking order, spacing selectors, gradient preservation, transform/reset behavior, important modifier placement, transitions/focus outlines, and several class names changed.
-- If precise patch-level behavior matters, consult the official changelog because v4.1 and v4.2 have many patch fixes around scanning, canonicalization, and framework integrations.
+Do not use this skill for generic CSS questions that do not involve Tailwind, or for Tailwind v3-only projects unless the task is migration to v4.
 
-## Quick upgrade commands
+## Core workflow
 
-```bash
-# Automated v3 -> v4 upgrade. Run on a clean branch and review the diff.
-npx @tailwindcss/upgrade@latest
+1. Identify the project context before changing files: package manager, framework, build tool, CSS entry point, existing `tailwind.config.*`, `postcss.config.*`, `vite.config.*`, and `package.json` scripts.
+2. Prefer the official v4 CSS-first model. Put most Tailwind configuration in the stylesheet that imports Tailwind, not in `tailwind.config.js`.
+3. Choose the integration path based on the project:
+   - Vite projects: use `tailwindcss` plus `@tailwindcss/vite`.
+   - PostCSS projects such as many Next.js or Angular setups: use `tailwindcss`, `@tailwindcss/postcss`, and `postcss`.
+   - Static or minimal projects: use `tailwindcss` plus `@tailwindcss/cli`.
+4. Use the existing package manager and lockfile style. Do not mix npm, pnpm, yarn, or bun unless the user asks.
+5. After edits, run the smallest relevant validation command available: a build, typecheck, lint, or framework dev/build command. If running commands is not appropriate, tell the user exactly what to run.
+6. For exact package versions or latest minor-release features, verify current Tailwind docs or release notes because v4.x evolves.
 
-# Vite integration, preferred when the project uses Vite.
-npm install tailwindcss @tailwindcss/vite
+## v4 defaults to prefer
 
-# PostCSS integration, when the app's build pipeline is PostCSS-based.
-npm install tailwindcss @tailwindcss/postcss
-
-# CLI integration, because the CLI moved to a separate package in v4.
-npm install tailwindcss @tailwindcss/cli
-```
-
-Minimal v4 CSS entry point:
+Use these patterns unless the project has a clear reason not to:
 
 ```css
 @import "tailwindcss";
 ```
 
-Minimal Vite setup:
+```css
+@theme {
+  --color-brand-500: oklch(0.62 0.18 260);
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --breakpoint-3xl: 120rem;
+}
+```
+
+```css
+@utility content-auto {
+  content-visibility: auto;
+}
+```
+
+```css
+@custom-variant dark (&:where(.dark, .dark *));
+```
+
+```css
+@source "../node_modules/@acme/ui";
+@source inline("{hover:,focus:,}bg-brand-{500,600}");
+```
+
+```css
+@reference "../../app.css";
+```
+
+## Common v3 patterns to avoid in v4
+
+Do not introduce these unless preserving backward compatibility temporarily:
+
+- `@tailwind base;`, `@tailwind components;`, or `@tailwind utilities;`
+- `npx tailwindcss init`
+- `npx tailwindcss -i input.css -o output.css` instead of `npx @tailwindcss/cli -i input.css -o output.css`
+- `tailwindcss` as a PostCSS plugin instead of `@tailwindcss/postcss`
+- assuming a `content` array or `tailwind.config.js` is required
+- `safelist` in JavaScript config instead of `@source inline()`
+- dynamic utility fragments such as `bg-${color}-500`; map props to complete static class strings instead
+
+## Installation snippets
+
+Vite:
+
+```bash
+npm install tailwindcss @tailwindcss/vite
+```
 
 ```ts
 import { defineConfig } from "vite";
@@ -48,7 +94,11 @@ export default defineConfig({
 });
 ```
 
-Minimal PostCSS setup:
+PostCSS:
+
+```bash
+npm install tailwindcss @tailwindcss/postcss postcss
+```
 
 ```js
 export default {
@@ -58,34 +108,39 @@ export default {
 };
 ```
 
-## Documentation map
+CLI:
 
-Read the reference files as needed:
+```bash
+npm install tailwindcss @tailwindcss/cli
+npx @tailwindcss/cli -i ./src/input.css -o ./src/output.css --watch
+```
 
-- `references/v3-to-v4-migration.md` — migration workflow, install changes, CSS-first configuration, source detection, `@apply`, legacy config support, and breaking changes.
-- `references/class-and-config-mapping.md` — quick v3-to-v4 class/config mappings and compatibility snippets.
-- `references/v4-1-and-v4-2.md` — version-specific features added in v4.1 and v4.2.
+## Migration guidance
 
-## Common answer pattern
+When upgrading from v3, first consider the official upgrade tool:
 
-When helping with a migration:
+```bash
+npx @tailwindcss/upgrade
+```
 
-1. Identify current Tailwind version, build tool, framework, CSS entrypoint, and whether `tailwind.config.*` exists.
-2. Recommend the upgrade tool unless the user needs a manual migration or minimal change set.
-3. Update integration packages: Vite uses `@tailwindcss/vite`; PostCSS uses `@tailwindcss/postcss`; CLI uses `@tailwindcss/cli`; webpack can use `@tailwindcss/webpack` in v4.2+.
-4. Replace `@tailwind base; @tailwind components; @tailwind utilities;` with `@import "tailwindcss";`.
-5. Move theme tokens from `tailwind.config.*` to `@theme` where practical.
-6. Replace custom classes in `@layer utilities/components` that need variants with `@utility`.
-7. Add explicit `@source` rules for files automatic detection misses; use `@source inline(...)` for safelisting in v4.1+ and `@import "tailwindcss" source(none);` only when every source is listed explicitly.
-8. Review renamed/removed utilities and visual defaults: border, ring, placeholder, shadow/radius/blur scales, hover, variant stacking, spacing/divide selectors, gradients, transform resets, important modifiers, outline-color transitions, and preflight.
-9. Run the app and use visual regression review for pages heavy on forms, borders, focus rings, dialogs, gradients, custom utilities, and mobile hover behavior.
+Then review the generated changes. Pay special attention to browser support, CSS entry points, package split, removed/renamed utilities, default border/ring changes, prefixes, important modifier placement, variant stacking order, CSS variable arbitrary values, and `@apply` usage in Vue/Svelte/Astro/CSS modules.
 
-## Official references
+Read `references/migration-checklist.md` for the detailed v3-to-v4 migration checklist.
 
-- Upgrade guide: https://tailwindcss.com/docs/upgrade-guide
-- v4.0 announcement: https://tailwindcss.com/blog/tailwindcss-v4
-- v4.1 announcement: https://tailwindcss.com/blog/tailwindcss-v4-1
-- Functions and directives: https://tailwindcss.com/docs/functions-and-directives
-- Detecting classes in source files: https://tailwindcss.com/docs/detecting-classes-in-source-files
-- Changelog: https://github.com/tailwindlabs/tailwindcss/blob/main/CHANGELOG.md
-- GitHub releases: https://github.com/tailwindlabs/tailwindcss/releases
+## Project auditing
+
+An optional non-destructive helper script is bundled:
+
+```bash
+node scripts/audit-tailwind-v4.mjs /path/to/project
+node scripts/audit-tailwind-v4.mjs /path/to/project --json
+```
+
+Use it when debugging or migrating an existing project. Treat its findings as heuristics, not a replacement for reading the relevant files.
+
+## Reference files
+
+- Read `references/v4-patterns.md` when writing or explaining Tailwind v4 CSS-first configuration.
+- Read `references/migration-checklist.md` when upgrading from v3 or fixing mixed v3/v4 code.
+- Read `references/troubleshooting.md` when resolving install/build errors or missing utilities.
+- Read `references/design-system-examples.md` when creating theme tokens, custom variants, or reusable component utilities.

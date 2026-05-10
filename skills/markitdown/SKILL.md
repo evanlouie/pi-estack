@@ -1,224 +1,121 @@
 ---
 name: markitdown
-description: Convert documents and rich files to Markdown for LLM/RAG pipelines using Microsoft's `markitdown` CLI. Use whenever you need to extract text from PDF, DOCX, PPTX, XLSX/XLS, Outlook .msg, EPUB, HTML, CSV/JSON/XML, ZIP archives, images (EXIF + OCR via LLM), audio (EXIF + transcription), Jupyter notebooks, YouTube/Wikipedia/Bing-SERP/RSS URLs, or any mixed file dump that needs a clean Markdown view. Covers stdin/stdout piping, format hints (`-x`/`-m`/`-c`), output redirection, plugin enablement, Azure Document Intelligence, and choosing the right install extras. Prefer this over hand-rolled parsers (`pdftotext`, `unzip + grep`, `pandoc`, `textract`) for ad-hoc "give me the text" jobs.
+description: Use this skill when a user asks to convert files, documents, Office files, PDFs, spreadsheets, slides, HTML, CSV, JSON, XML, images, audio, ZIP archives, EPubs, YouTube links, or trusted public URLs into Markdown using Microsoft MarkItDown; extract LLM-ready Markdown text; batch-convert documents; troubleshoot MarkItDown output; or use MarkItDown plugins, Azure Document Intelligence, or optional LLM image descriptions.
+license: MIT
+compatibility: Requires Python 3.10+ and uv. The bundled script installs markitdown[all]>=0.1.5,<0.2 in an isolated uv environment. Some conversions may require network access, API credentials, or third-party plugins when explicitly requested.
+metadata:
+  source: https://github.com/microsoft/markitdown
+  skill_version: "1.0.0"
 ---
 
-# markitdown
+# MarkItDown
 
-`markitdown` is Microsoft's "everything → Markdown" CLI/library, designed for LLM ingestion (RAG, summarization, indexing) rather than pixel-perfect document fidelity. It dispatches the input to a format-specific converter and prints Markdown.
+Use Microsoft MarkItDown to convert source files or trusted public URLs into Markdown optimized for LLM ingestion and text analysis.
 
-Prefer `markitdown` over `pdftotext`, `pandoc`, `textract`, `unzip`-and-grep, or hand-rolled parsers when the goal is "extract readable text/structure for an LLM."
+## Default workflow
 
-## Mental model
-
-```
-markitdown [FILE]            [-o OUT] [-x EXT] [-m MIME] [-c CHARSET]
-                             [-p|--use-plugins] [-d -e ENDPOINT]
-                             [--keep-data-uris]
-```
-
-- One positional input. Omitted → reads from stdin.
-- One output: `-o FILE`, or stdout (use shell redirection `> out.md`).
-- The converter is picked from extension + sniffed MIME. If you pipe via stdin or pass a file with a wrong/missing extension, pass a hint: `-x pdf`, `-m application/pdf`, `-c utf-8`.
-- No batch / glob / recursive mode. Loop in shell for many files.
-
-## Install
+1. Identify the input files or URLs, the requested output location, and whether the user needs local-only conversion, remote URL conversion, plugins, Azure Document Intelligence, or LLM-generated image descriptions.
+2. Prefer the bundled helper script for repeatable conversion and safer defaults:
 
 ```bash
-# Recommended: all converters
-uv tool install 'markitdown[all]'
-# or
-pipx install 'markitdown[all]'
-# or in a venv
-pip install 'markitdown[all]'
+uv run scripts/convert_to_markdown.py INPUT_FILE --output-dir OUTPUT_DIR --json
 ```
 
-Per-format extras (combine in one bracket list). Use these when image/size matters, e.g., container builds:
+3. Verify the result before returning it: confirm the Markdown file exists, is non-empty, and has plausible headings/tables/text for the source type.
+4. Report output paths and any conversion limitations. Do not claim high-fidelity visual/layout preservation; MarkItDown is intended for structured Markdown content, not exact visual reproduction.
 
-| Extra                     | Adds                                               |
-| ------------------------- | -------------------------------------------------- |
-| `[all]`                   | Everything below                                   |
-| `[pdf]`                   | PDF parsing                                        |
-| `[docx]`                  | Word `.docx`                                       |
-| `[pptx]`                  | PowerPoint `.pptx`                                 |
-| `[xlsx]`                  | Modern Excel `.xlsx`                               |
-| `[xls]`                   | Legacy Excel `.xls`                                |
-| `[outlook]`               | Outlook `.msg`                                     |
-| `[audio-transcription]`   | `.wav` / `.mp3` / `.m4a` / `.mp4` speech → text (uses SpeechRecognition + pydub; Google recognizer by default) |
-| `[youtube-transcription]` | YouTube transcript fetcher                         |
-| `[az-doc-intel]`          | Azure Document Intelligence client                 |
+## Common commands
 
-Verify install: `markitdown --version` and `markitdown --list-plugins`.
-
-## Supported inputs (built-in converters)
-
-PDF, DOCX, PPTX, XLSX, XLS, Outlook MSG, EPUB, HTML, CSV, JSON (RSS/Atom feeds via dedicated converter), images (EXIF; OCR only when an LLM client is supplied via the Python API), audio (EXIF; transcription with `[audio-transcription]`), Jupyter `.ipynb`, ZIP (recurses contents), plain text, YouTube URLs, Wikipedia URLs, Bing SERP URLs, RSS.
-
-HTTP/HTTPS URLs are accepted as positional input for static pages and the URL-shaped converters above. Fetch first (e.g., `curl-cffi`) and pipe with `-x html` when you need custom headers/cookies/browser impersonation, a saved HTML artifact, or JavaScript-rendered/challenge-page troubleshooting.
-
-## Quick recipes
+Convert one local file to an output directory:
 
 ```bash
-# Basic: file → stdout
-markitdown report.pdf
-
-# File → file
-markitdown report.pdf -o report.md
-markitdown deck.pptx > deck.md           # equivalent via redirection
-
-# Stdin (must hint the format unless it's plain text)
-cat report.pdf | markitdown -x pdf > report.md
-curl-cffi get https://example.com/a.docx | markitdown -x docx -o a.md
-
-# HTML snippet from stdin
-echo '<h1>Hi</h1><p>world <b>bold</b></p>' | markitdown -x html
-
-# CSV → Markdown table (TSV is not a built-in table converter; convert to CSV first)
-markitdown data.csv -o data.md
-
-# Spreadsheet → one section per sheet
-markitdown workbook.xlsx -o workbook.md
-
-# Outlook message
-markitdown thread.msg -o thread.md
-
-# EPUB book
-markitdown book.epub -o book.md
-
-# Jupyter notebook (markdown/code/raw cells preserved; cell outputs are not included)
-markitdown analysis.ipynb -o analysis.md
-
-# ZIP of mixed docs (recurses; each entry rendered with its own converter)
-markitdown bundle.zip -o bundle.md
-
-# YouTube watch URL → transcript + metadata (needs [youtube-transcription])
-markitdown 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' -o video.md
-
-# Wikipedia page
-markitdown 'https://en.wikipedia.org/wiki/Markdown' -o wiki.md
-
-# Keep base64 image payloads instead of truncating them
-markitdown slides.pptx --keep-data-uris -o slides.md
+uv run scripts/convert_to_markdown.py ~/Downloads/report.pdf --output-dir ./converted --json
 ```
 
-## Format hints (`-x`, `-m`, `-c`)
-
-Use when the file has the wrong/no extension or comes via stdin:
+Convert multiple local files:
 
 ```bash
-# Wrong extension
-markitdown -x pdf weird_name.bin -o out.md
-
-# Force MIME
-cat unknown.blob | markitdown -m application/vnd.openxmlformats-officedocument.wordprocessingml.document
-
-# Latin-1 text
-markitdown -x txt -c iso-8859-1 legacy.log
+uv run scripts/convert_to_markdown.py docs/*.pdf docs/*.docx --output-dir ./converted --json
 ```
 
-Pass at most what's needed; markitdown will sniff the rest.
-
-## Batch conversion (shell loop)
-
-There is no built-in glob mode. Use the shell:
+Write a single conversion to stdout:
 
 ```bash
-# All PDFs in a tree → mirrored .md next to the source
-find . -type f -name '*.pdf' -print0 | while IFS= read -r -d '' f; do
-    markitdown "$f" -o "${f%.pdf}.md"
-done
-
-# Or with GNU parallel for speed
-find . -name '*.docx' | parallel 'markitdown {} -o {.}.md'
+uv run scripts/convert_to_markdown.py ./notes.docx --stdout
 ```
 
-## Plugins
-
-Plugins ship separately, are off by default, and only load with `-p` / `--use-plugins`.
+Write a single conversion to an explicit file:
 
 ```bash
-markitdown --list-plugins                # show installed plugins (and the discovery hint)
-markitdown -p path-to-file.pdf -o out.md # run with plugins active
+uv run scripts/convert_to_markdown.py ./deck.pptx --output ./deck.md --overwrite --json
 ```
 
-Search GitHub for the `#markitdown-plugin` hashtag to find more. Notable: `markitdown-ocr` (LLM-vision OCR for images embedded in PDF/DOCX/PPTX/XLSX) — install with `pip install markitdown-ocr` and supply an `llm_client` via the Python API; the CLI alone won't pass an OpenAI client through.
-
-## Azure Document Intelligence (high-quality PDF/scan OCR)
-
-Best path for scanned/complex PDFs when offline parsing produces garbage. Requires the `[az-doc-intel]` extra and an Azure endpoint.
+Convert a trusted public URL only when the user explicitly asks for URL conversion:
 
 ```bash
-markitdown scan.pdf -d -e "https://<your-resource>.cognitiveservices.azure.com/" -o scan.md
+uv run scripts/convert_to_markdown.py 'https://example.com/page.html' --allow-remote --output-dir ./converted --json
 ```
 
-Auth uses `AZURE_API_KEY` with `AzureKeyCredential` when that environment variable is set; otherwise it falls back to `DefaultAzureCredential` (env vars / managed identity / `az login`). There is no CLI API-key flag.
-
-## Image OCR / audio transcription notes
-
-- **Images via the CLI alone**: extract EXIF only — no OCR. To OCR via vision LLM you must use the Python API with `llm_client=` (see below) or install the `markitdown-ocr` plugin and drive it from Python.
-- **Audio via the CLI**: requires the `[audio-transcription]` extra; transcribes `.wav` / `.mp3` / `.m4a` / `.mp4` with SpeechRecognition + pydub and includes EXIF/ID3 metadata.
-- **Scanned PDFs**: built-in PDF converter does _not_ OCR. Use `-d -e ENDPOINT` (Azure DocIntel) or pre-OCR with `ocrmypdf`.
-
-## Output behavior gotchas
-
-- Writes UTF-8 to stdout. Pipe to a file with `-o`/`>` for non-ASCII safety in some terminals.
-- Embedded base64 images (`data:` URIs) are truncated by default; use `--keep-data-uris` to retain them (large outputs).
-- Tables are emitted as GFM pipe tables; very wide spreadsheets stay valid Markdown but render unwieldy — fine for LLMs.
-- ZIP conversion concatenates per-entry Markdown with file-name headings; nested archives recurse.
-
-## Python API (when CLI isn't enough)
-
-Reach for Python when you need: image OCR via LLM, custom prompts, batching with shared state, plugin configuration, or programmatic access to source metadata.
-
-```python
-from markitdown import MarkItDown
-from openai import OpenAI
-
-md = MarkItDown(
-    enable_plugins=False,                 # set True to honor installed plugins
-    llm_client=OpenAI(),                  # enables image OCR / descriptions
-    llm_model="gpt-4o",
-)
-
-result = md.convert("deck.pptx")          # or convert_local / convert_stream / convert_response
-print(result.text_content)                # the Markdown
-print(result.title)                       # best-effort title (when available)
-```
-
-Security-conscious entry points (preferred in servers / untrusted input):
-
-```python
-md.convert_local("/safe/path/file.pdf")    # local files only
-md.convert_stream(open("file.pdf", "rb"), file_extension=".pdf")
-import requests
-md.convert_response(requests.get(url))     # you control the fetch
-```
-
-Run ad-hoc without polluting the environment:
+Use Azure Document Intelligence for a PDF when the user requested it and provided/approved the endpoint:
 
 ```bash
-uv run --with 'markitdown[all]' python script.py
+uv run scripts/convert_to_markdown.py ./scanned.pdf --docintel-endpoint "$AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT" --output-dir ./converted --json
 ```
 
-## Diagnosing problems
+Use an LLM client for image descriptions only when the user asked for it and the required credentials are available:
 
 ```bash
-markitdown --version
-markitdown --list-plugins
+uv run scripts/convert_to_markdown.py ./diagram.png --llm-model "$MODEL" --output-dir ./converted --json
 ```
 
-Common failure modes:
+## When to use plugins
 
-- **`MissingDependencyException` / "install markitdown[<ext>]"** — install the matching extra (e.g., `pip install 'markitdown[pdf]'`).
-- **Empty / single-line output from a PDF** — it's a scan. Use `-d -e ENDPOINT` (Azure DocIntel) or pre-OCR.
-- **`UnsupportedFormatException`** — converter didn't match. Re-run with `-x EXT` and/or `-m MIME` to force the right one.
-- **Garbled non-ASCII text from stdin** — pass `-c utf-8` (or the actual charset).
-- **Image yields only EXIF** — expected from CLI; need the Python API with an `llm_client`, or the `markitdown-ocr` plugin.
-- **YouTube returns metadata only** — install `[youtube-transcription]`; use a `https://www.youtube.com/watch?...` URL and check the video actually has captions.
+Plugins are disabled by default. Enable them only when the user asks for plugin behavior or when a conversion requires a known installed plugin:
 
-## When NOT to use markitdown
+```bash
+uv run scripts/convert_to_markdown.py ./file.pdf --use-plugins --output-dir ./converted --json
+```
 
-- High-fidelity human-facing conversions (layout, page numbers, footnotes preserved exactly) — use `pandoc` or commercial tools.
-- Plain-text scrape of a JS-rendered web page — use the `agent-browser` skill, then pipe the resulting HTML in with `-x html`.
-- Just need raw bytes / binary extraction — use the format's native CLI (`pdftotext`, `unzip`, `ffmpeg`).
-- WebSocket/streaming sources — out of scope.
+List installed plugins with the MarkItDown CLI:
+
+```bash
+uvx --from 'markitdown[all]>=0.1.5,<0.2' markitdown --list-plugins
+```
+
+## Fallback one-off CLI
+
+For a simple trusted local file, the direct CLI is acceptable:
+
+```bash
+uvx --from 'markitdown[all]>=0.1.5,<0.2' markitdown path-to-file.pdf -o document.md
+```
+
+Use the bundled script instead for batch conversion, explicit JSON summaries, URL safety checks, output naming, overwrite control, Azure/LLM options, or format hints.
+
+## Format hints
+
+If MarkItDown cannot infer a stream or file type, retry with hints:
+
+```bash
+uv run scripts/convert_to_markdown.py ./unknown.bin --extension .pdf --mime-type application/pdf --output-dir ./converted --json
+```
+
+Use `--charset UTF-8` for ambiguous text encodings.
+
+## Safety and privacy defaults
+
+- Treat inputs as sensitive. Convert local files locally unless the user explicitly requests a remote service, Azure Document Intelligence, plugins, or LLM image descriptions.
+- Do not run MarkItDown on untrusted paths or URLs in hosted/server contexts without validation. The helper script is local-only unless `--allow-remote` is supplied, and it blocks private, loopback, link-local, reserved, multicast, and non-HTTP(S) remote destinations.
+- Do not enable plugins automatically. Third-party plugins may run additional code or make external calls.
+- Do not send private files to Azure Document Intelligence or an LLM client unless the user explicitly requests it.
+- For very large files, convert one at a time and check output incrementally.
+
+## Troubleshooting
+
+- Empty or low-quality PDF output: the file may be scanned/image-only. Ask whether OCR, Azure Document Intelligence, or a MarkItDown OCR plugin should be used; do not silently send the file externally.
+- Broken tables: try converting the source spreadsheet/CSV directly rather than a PDF export.
+- Misdetected type: use `--extension`, `--mime-type`, or `--charset`.
+- Remote conversion failure: download the public file separately if appropriate, then convert the local copy.
+- Plugin conversion failure: list installed plugins, confirm the requested plugin is installed, and retry with `--use-plugins` only for that file.
+
+Read `references/markitdown-reference.md` for supported formats, API notes, and CLI option details.
