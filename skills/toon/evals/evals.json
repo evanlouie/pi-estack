@@ -1,0 +1,46 @@
+{
+  "skill_name": "toon",
+  "evals": [
+    {
+      "id": "encode-uniform-array",
+      "prompt": "Convert this JSON to TOON and write it to output.toon: {\"users\":[{\"id\":1,\"name\":\"Alice\",\"role\":\"admin\"},{\"id\":2,\"name\":\"Bob\",\"role\":\"user\"}]}",
+      "expected_output": "A valid TOON file using tabular form with header users[2]{id,name,role}: and exactly two rows.",
+      "assertions": [
+        "The output includes a .toon file or clearly labeled TOON block.",
+        "The users array is encoded in tabular form, not expanded YAML-like form.",
+        "The declared [2] count matches the two rows.",
+        "Each row contains exactly three values."
+      ]
+    },
+    {
+      "id": "decode-folded-paths",
+      "prompt": "Decode this TOON to JSON, treating dotted keys as safe folded paths: data.meta.items[2]: a,b",
+      "expected_output": "JSON equivalent to {\"data\":{\"meta\":{\"items\":[\"a\",\"b\"]}}}.",
+      "assertions": [
+        "The output expands data.meta.items into nested data/meta/items objects.",
+        "The items value is an array with exactly two strings.",
+        "The response does not leave data.meta.items as a literal top-level key."
+      ]
+    },
+    {
+      "id": "validate-broken-row-width",
+      "prompt": "Validate this TOON and explain the error: users[2]{id,name,email}:\\n  1,Alice,a@example.com\\n  2,Bob",
+      "expected_output": "The validation fails because the second tabular row has fewer values than the declared field list.",
+      "assertions": [
+        "The response reports that the document is invalid.",
+        "The explanation identifies a tabular row width or field-count mismatch.",
+        "The response does not silently repair the TOON without noting the validation failure."
+      ]
+    },
+    {
+      "id": "format-choice",
+      "prompt": "I have a flat CSV with 2 million rows and no nested fields. Should I use TOON instead before sending it to an LLM?",
+      "expected_output": "A recommendation that CSV is usually smaller for purely flat tables, with TOON considered only if explicit lengths, field headers, or validation affordances matter.",
+      "assertions": [
+        "The response does not recommend TOON unconditionally.",
+        "The response mentions CSV's suitability for purely flat tabular data.",
+        "The response explains when TOON's structural guardrails may still be useful."
+      ]
+    }
+  ]
+}

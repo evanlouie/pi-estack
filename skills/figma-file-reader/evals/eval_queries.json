@@ -1,0 +1,12 @@
+[
+  { "query": "Can you inspect this Figma URL and summarize the main screens?", "should_trigger": true },
+  { "query": "Extract color and typography tokens from this Figma handoff JSON", "should_trigger": true },
+  { "query": "Find the CTA button node in my Figma file", "should_trigger": true },
+  { "query": "Fetch only this Figma node and explain its auto-layout", "should_trigger": true },
+  { "query": "The designer sent a node-id link; parse it and get the frame details", "should_trigger": true },
+  { "query": "Convert this PNG to SVG", "should_trigger": false },
+  { "query": "Summarize this PDF", "should_trigger": false },
+  { "query": "Review this React component for accessibility", "should_trigger": false },
+  { "query": "What is Figma?", "should_trigger": false },
+  { "query": "Make a wireframe for a new checkout flow", "should_trigger": false }
+]

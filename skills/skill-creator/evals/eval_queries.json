@@ -1,0 +1,42 @@
+[
+  {
+    "query": "Can you create an Agent Skill that turns our release checklist into reusable instructions?",
+    "should_trigger": true
+  },
+  {
+    "query": "Write a SKILL.md for a data profiling workflow and include validation steps.",
+    "should_trigger": true
+  },
+  {
+    "query": "The skill description is triggering on unrelated spreadsheet edits. Help me make it more precise.",
+    "should_trigger": true
+  },
+  {
+    "query": "Package this workflow as .agents/skills/api-review with references and scripts.",
+    "should_trigger": true
+  },
+  {
+    "query": "Make eval_queries.json with positive and near-miss negative prompts for this skill.",
+    "should_trigger": true
+  },
+  {
+    "query": "Build a validator script for checking Agent Skill frontmatter.",
+    "should_trigger": true
+  },
+  {
+    "query": "What are Agent Skills? Give me a conceptual overview.",
+    "should_trigger": false
+  },
+  {
+    "query": "Use the csv-analysis skill to chart revenue by month.",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a prompt for a friendly coding assistant persona.",
+    "should_trigger": false
+  },
+  {
+    "query": "Add support for skill discovery in my agent runtime.",
+    "should_trigger": false
+  }
+]

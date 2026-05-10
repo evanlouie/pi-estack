@@ -1,0 +1,106 @@
+{
+  "name": "Sample Checkout UI",
+  "lastModified": "2026-05-01T12:00:00Z",
+  "editorType": "figma",
+  "version": "1234567890",
+  "document": {
+    "id": "0:0",
+    "name": "Document",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "0:1",
+        "name": "Home",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "12:34",
+            "name": "Checkout",
+            "type": "FRAME",
+            "layoutMode": "VERTICAL",
+            "itemSpacing": 16,
+            "paddingLeft": 24,
+            "paddingRight": 24,
+            "paddingTop": 32,
+            "paddingBottom": 32,
+            "cornerRadius": 12,
+            "absoluteBoundingBox": { "x": 0, "y": 0, "width": 390, "height": 844 },
+            "fills": [
+              { "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1 }, "opacity": 1 }
+            ],
+            "children": [
+              {
+                "id": "12:35",
+                "name": "Title",
+                "type": "TEXT",
+                "characters": "Complete your order",
+                "style": {
+                  "fontFamily": "Inter",
+                  "fontPostScriptName": "Inter-SemiBold",
+                  "fontWeight": 600,
+                  "fontSize": 24,
+                  "lineHeightPx": 32,
+                  "letterSpacing": 0
+                },
+                "styles": { "text": "S:heading-lg" },
+                "fills": [
+                  { "type": "SOLID", "color": { "r": 0.067, "g": 0.067, "b": 0.067 }, "opacity": 1 }
+                ]
+              },
+              {
+                "id": "12:36",
+                "name": "Primary CTA",
+                "type": "INSTANCE",
+                "componentId": "99:1",
+                "cornerRadius": 8,
+                "fills": [
+                  { "type": "SOLID", "color": { "r": 0.10, "g": 0.33, "b": 0.94 }, "opacity": 1 }
+                ],
+                "boundVariables": {
+                  "fills": [
+                    { "type": "VARIABLE_ALIAS", "id": "VariableID:color-brand-primary" }
+                  ]
+                },
+                "children": [
+                  {
+                    "id": "12:37",
+                    "name": "Button Label",
+                    "type": "TEXT",
+                    "characters": "Pay now",
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontPostScriptName": "Inter-Medium",
+                      "fontWeight": 500,
+                      "fontSize": 16,
+                      "lineHeightPx": 24,
+                      "letterSpacing": 0
+                    },
+                    "fills": [
+                      { "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1 }, "opacity": 1 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "components": {
+    "99:1": {
+      "key": "button-primary-key",
+      "name": "Button / Primary",
+      "description": "Primary button component"
+    }
+  },
+  "componentSets": {},
+  "styles": {
+    "S:heading-lg": {
+      "key": "heading-lg-key",
+      "name": "Heading/Large",
+      "style_type": "TEXT"
+    }
+  },
+  "schemaVersion": 0
+}

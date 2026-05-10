@@ -1,141 +1,184 @@
 ---
 name: toon
-description: "Use the TOON CLI (`toon` / `npx @toon-format/cli`) to convert JSON to Token-Oriented Object Notation and TOON back to JSON, analyze token savings, choose delimiters/key folding/path expansion options, and build stdin/stdout pipelines for LLM prompt data. Trigger when users mention TOON, .toon files, compact JSON for LLMs, token-efficient JSON serialization, or the toon-format CLI."
+description: Use this skill when the user asks to convert JSON to or from TOON, author or validate .toon files, compact structured data for LLM prompts, choose delimiters/key folding/path expansion, compare TOON with JSON/YAML/CSV, or use the @toon-format/toon CLI/API.
+license: MIT
+compatibility: Requires Bun plus Node/npm/npx for bundled scripts/toon.ts, which wraps npx @toon-format/cli@2.2.0. Agents may run the official npx CLI directly when Bun is unavailable.
+metadata:
+  source_repository: "https://github.com/toon-format/toon"
+  specification_repository: "https://github.com/toon-format/spec"
+  toon_package: "@toon-format/toon@2.2.0"
+  cli_package: "@toon-format/cli@2.2.0"
+  spec_version: "3.0"
 ---
 
-# TOON CLI
+# TOON
 
-TOON (Token-Oriented Object Notation) is a compact, human-readable, schema-aware encoding of the JSON data model for LLM prompts. This skill is focused on the command-line tool: `@toon-format/cli` / `toon`.
+TOON (Token-Oriented Object Notation) is a compact, line-oriented, indentation-based encoding of the JSON data model for LLM prompts. Use it as a translation layer: keep programmatic data as JSON, encode to TOON for prompt input, and decode or validate TOON before relying on it.
 
-Prefer the CLI when the user wants quick JSON↔TOON conversion, token-savings estimates, `.toon` files, shell pipelines, or large-data streaming without writing TypeScript code.
+## Default workflow
 
-## Install / invoke
+1. Decide whether TOON is appropriate.
+   - Prefer TOON for uniform arrays of objects, mixed structured data sent to LLMs, and prompts where explicit `[N]` lengths and `{fields}` improve readability and validation.
+   - Prefer compact JSON for deeply nested or highly non-uniform data when token savings are uncertain.
+   - Prefer CSV for purely flat tables when maximum compactness matters and nesting/type awareness is unnecessary.
+   - Prefer JSON for public APIs, persistent storage, and application-level interchange unless the user specifically requests TOON.
 
-Use without installing:
+2. Use official tooling for conversion, decoding, and validation whenever possible. Do not hand-convert large datasets.
 
-```bash
-npx @toon-format/cli input.json -o output.toon
-```
+3. Validate model-generated TOON before using it. Strict decode catches row-count, field-width, indentation, delimiter, and syntax errors.
 
-Install globally for repeated use:
+4. For nontrivial syntax questions, validation-error diagnosis, or delimiter/key-folding/path-expansion details, read `references/toon-format-guide.md`.
 
-```bash
-npm install -g @toon-format/cli
-# then:
-toon input.json -o output.toon
-```
+## Bundled script
 
-If `toon` is unavailable, use `npx @toon-format/cli` in examples or commands.
-
-## Mental model
+Run from the skill root:
 
 ```bash
-toon [input|-] [options]
+bun run scripts/toon.ts encode input.json -o output.toon
+bun run scripts/toon.ts decode data.toon -o output.json
+bun run scripts/toon.ts validate data.toon
+bun run scripts/toon.ts roundtrip input.json --toon-output output.toon -o restored.json
 ```
 
-- `.json` input → encode JSON to TOON.
-- `.toon` input → decode TOON to JSON.
-- No input, or `-`, reads stdin.
-- Stdin defaults to encode; pass `--decode` for TOON from stdin.
-- Output goes to stdout unless `-o, --output <file>` is provided.
-- TOON files conventionally use `.toon`; media type is `text/toon`.
-
-## Core recipes
+Useful options:
 
 ```bash
-# Encode JSON to TOON
-toon input.json -o output.toon
-npx @toon-format/cli input.json -o output.toon
+# Tab delimiter for large tabular data
+bun run scripts/toon.ts encode data.json --delimiter tab -o data.toon
 
-# Decode TOON to JSON
-toon data.toon -o output.json
+# Pipe delimiter when commas are common in values
+bun run scripts/toon.ts encode data.json --delimiter pipe -o data.toon
 
-# Print converted output to stdout
-toon input.json
+# Collapse safe single-key wrapper chains
+bun run scripts/toon.ts encode data.json --keyFolding safe -o folded.toon
 
-# Pipe JSON from stdin; defaults to encode
-echo '{"name":"Ada","role":"dev"}' | toon
-cat data.json | toon > data.toon
-
-# Decode TOON from stdin
-cat data.toon | toon --decode > data.json
-
-# Analyze token savings while encoding
-toon data.json --stats -o data.toon
-
-# Use with jq/curl-style pipelines
-jq '.results' response.json | toon > results.toon
-curl https://api.example.com/data | toon --stats > data.toon
+# Reconstruct folded dotted paths while decoding
+bun run scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
-For authorized/web fetches in this environment, prefer the `curl-cffi` skill over raw `curl`, then pipe to `toon`.
-
-## Options
-
-| Option | Use |
-| --- | --- |
-| `-o, --output <file>` | Write output to a file instead of stdout. |
-| `-e, --encode` | Force encode mode; useful with stdin or ambiguous file names. |
-| `-d, --decode` | Force decode mode; required when decoding from stdin. |
-| `--delimiter <char>` | Array delimiter: `,`, `\t`, or `|`. Use tab/pipe when it improves token efficiency or CSV-like readability. |
-| `--indent <number>` | Indentation size; default `2`. |
-| `--stats` | Show token estimates and savings; encode only. |
-| `--no-strict` | Disable strict validation when decoding trusted input for faster processing. |
-| `--keyFolding <mode>` | Key folding mode: `off` or `safe`; default `off`. |
-| `--flattenDepth <number>` | Maximum folded path segments; only has an effect with `--keyFolding safe`. |
-| `--expandPaths <mode>` | Path expansion mode: `off` or `safe`; default `off`. |
-
-Combined efficiency example:
+When Bun is unavailable but Node/npm are available, use the official CLI:
 
 ```bash
-toon data.json --keyFolding safe --delimiter $'\t' --stats -o output.toon
+npx @toon-format/cli@2.2.0 input.json -o output.toon
+npx @toon-format/cli@2.2.0 data.toon -o output.json
+npx @toon-format/cli@2.2.0 data.json --stats
 ```
 
-## Large files and streaming
+## Authoring rules to keep in working memory
 
-The CLI streams output incrementally, so it is useful for large datasets, but be precise about memory behavior:
+### Objects
 
-- Encoding reads/parses the full JSON input, then streams TOON output.
-- Decoding streams JSON output unless `--expandPaths safe` is used.
-- `--stats` computes accurate token counts and may build the full TOON string internally.
+```toon
+id: 123
+name: Ada
+profile:
+  role: admin
+  active: true
+```
+
+Use `key: value` for primitive fields and `key:` plus indented children for nested or empty objects. Preserve source key order.
+
+### Primitive arrays
+
+```toon
+tags[3]: admin,ops,dev
+empty[0]:
+```
+
+Array headers declare the exact length. Root arrays omit the key: `[3]: a,b,c`.
+
+### Uniform arrays of objects
+
+Use tabular form when every element is an object, all objects have the same keys, and all row values are primitive:
+
+```toon
+users[2]{id,name,role}:
+  1,Alice,admin
+  2,Bob,user
+```
+
+The row count must equal `[N]`. Every row width must equal the field count in `{...}`.
+
+### Mixed or nested arrays
+
+Use expanded list form when array elements are non-uniform or contain nested objects/arrays:
+
+```toon
+items[3]:
+  - 1
+  - id: 2
+    name: Nested
+  - [2]: a,b
+```
+
+### Quoting
+
+Quote string values when they are empty, have leading/trailing whitespace, look like a number/boolean/null, contain `:`, `"`, `\`, `[`, `]`, `{`, `}`, a control character, the active delimiter, or start with `-`.
+
+Escape only these sequences inside quoted strings and keys: `\\`, `\"`, `\n`, `\r`, `\t`.
+
+Unquoted keys and tabular field names should match:
+
+```text
+^[A-Za-z_][A-Za-z0-9_.]*$
+```
+
+Quote keys that do not match, including hyphenated keys:
+
+```toon
+"my-key"[2]: a,b
+```
+
+### Numbers, indentation, and whitespace
+
+- Encode numbers in canonical decimal form: no exponent notation, no leading zeros, no trailing fractional zeros, and `-0` becomes `0`.
+- Use two spaces per indentation level unless the user requests another indent size.
+- Never use tabs for indentation. Tabs are allowed only as quoted string content or as the tab delimiter.
+- Avoid comments, trailing spaces, and trailing newline in generated `.toon` files.
+
+## Delimiters
+
+Comma is the default. Tab can reduce token usage for large tabular data and pipe is useful when values often contain commas.
+
+```toon
+items[2|]{sku|name|qty}:
+  A1|Widget|2
+  B2|Gadget|1
+```
+
+When writing tab-delimited TOON by hand, the header and rows require actual tab characters, not the literal string `\t`; prefer the script or CLI.
+
+## Key folding and path expansion
+
+Dotted keys are literal by default:
+
+```toon
+user.name: Ada
+```
+
+Only decode them into nested objects when the user wants folded paths expanded:
 
 ```bash
-toon huge-dataset.json -o huge-dataset.toon
-toon huge-dataset.toon -o huge-dataset.json
-cat million-records.json | toon --delimiter $'\t' > output.toon
+bun run scripts/toon.ts decode data.toon --expandPaths safe
 ```
 
-Omit `--stats` for maximum memory efficiency on very large files.
-
-`--expandPaths safe` on decode may fall back to non-streaming behavior to apply deep merge expansion before writing JSON.
-
-## Validation and safety
-
-- Decode strictly by default. This catches array count mismatches, indentation problems, and delimiter inconsistencies.
-- Use `--no-strict` only when the input is trusted and speed matters:
+Use paired options for round-trips:
 
 ```bash
-toon data.toon --no-strict -o output.json
+bun run scripts/toon.ts encode input.json --keyFolding safe -o folded.toon
+bun run scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
-- Preserve original JSON when doing irreversible transformations or when comparing token savings.
-- For generated `.toon`, validate round-trip when correctness matters:
+## Prompting with TOON
 
-```bash
-toon input.json -o /tmp/input.toon
-toon /tmp/input.toon -o /tmp/roundtrip.json
-jq -S . input.json > /tmp/a.json
-jq -S . /tmp/roundtrip.json > /tmp/b.json
-diff -u /tmp/a.json /tmp/b.json
+When embedding TOON in an LLM prompt, wrap it in a fenced code block and rely on the self-describing headers:
+
+````markdown
+```toon
+users[2]{id,name,role}:
+  1,Alice,admin
+  2,Bob,user
 ```
+````
 
-## When to recommend TOON
-
-Use TOON for structured data sent to LLMs when compactness and readability matter, especially arrays of similarly-shaped objects. It is not always the right representation for tiny payloads, deeply irregular data, binary content, or contexts where only strict JSON is accepted.
-
-## References
-
-- Repository: https://github.com/toon-format/toon
-- CLI docs: https://toonformat.dev/cli/
-- Markdown docs for LLMs: https://toonformat.dev/cli.md
-- Specification: https://github.com/toon-format/spec
+When asking a model to produce TOON, show the target header and require exact `[N]` counts and row widths. Decode or validate the generated TOON before using it in a pipeline.

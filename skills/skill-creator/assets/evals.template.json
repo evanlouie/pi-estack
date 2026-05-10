@@ -1,0 +1,30 @@
+{
+  "skill_name": "{{skill-name}}",
+  "evals": [
+    {
+      "id": "create-basic-skill",
+      "prompt": "Create an Agent Skill for {{task/domain}}. It should include a valid SKILL.md and any useful references or scripts.",
+      "expected_output": "A complete skill directory with valid frontmatter, a concise trigger description, clear workflow instructions, and appropriate optional files.",
+      "files": [],
+      "assertions": [
+        "The output includes a SKILL.md file",
+        "The frontmatter contains a valid name matching the parent directory",
+        "The description explains when to use the skill and is under 1024 characters",
+        "The body includes a step-by-step workflow",
+        "Optional scripts or reference files are only included when they add value"
+      ]
+    },
+    {
+      "id": "revise-existing-skill",
+      "prompt": "Revise this existing Agent Skill using the attached feedback and eval failures.",
+      "expected_output": "A revised skill that addresses the general failure modes, not just narrow examples, and reports validation status.",
+      "files": ["evals/files/SKILL.md", "evals/files/feedback.json"],
+      "assertions": [
+        "The revision keeps the skill scope coherent",
+        "The changes generalize from feedback rather than patching only the exact examples",
+        "The package validates or clearly reports remaining validation issues",
+        "The response summarizes what changed"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "query": "Create an Agent Skill from this runbook and package it under .agents/skills/.",
+    "should_trigger": true
+  },
+  {
+    "query": "Improve this SKILL.md description so it triggers when users ask for invoice PDF extraction.",
+    "should_trigger": true
+  },
+  {
+    "query": "Build trigger eval queries for this Agent Skill, with near-miss negative examples.",
+    "should_trigger": true
+  },
+  {
+    "query": "Write a Python script to validate a generated mapping and bundle it with a skill.",
+    "should_trigger": true
+  },
+  {
+    "query": "Summarize what Agent Skills are at a high level.",
+    "should_trigger": false
+  },
+  {
+    "query": "Use the pdf-processing skill to extract tables from this file.",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a GitHub Actions workflow for my CI pipeline.",
+    "should_trigger": false
+  },
+  {
+    "query": "Implement skill discovery and activation in my agent client.",
+    "should_trigger": false
+  }
+]

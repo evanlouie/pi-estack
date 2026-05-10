@@ -1,0 +1,21 @@
+{
+  "skill_name": "figma-file-reader",
+  "evals": [
+    {
+      "id": "parse-node-url",
+      "prompt": "Parse this Figma node URL and tell me the file key and API node id: https://www.figma.com/design/AbCdEf1234567890/My-App?node-id=12-34&t=abc",
+      "expected_output": "Identifies file_key AbCdEf1234567890 and node_id 12:34, noting conversion from URL hyphen form to API colon form."
+    },
+    {
+      "id": "summarize-local-json",
+      "prompt": "Using evals/files/sample-figma-file.json, summarize the pages, main frames, colors, and text styles.",
+      "expected_output": "Runs the summarize/tokens commands on local JSON and reports the Home page, Checkout frame, component/style counts, color candidates, and typography candidates.",
+      "files": ["evals/files/sample-figma-file.json"]
+    },
+    {
+      "id": "node-scoped-fetch-plan",
+      "prompt": "I only care about node 45:67 in this Figma file. What should you fetch first?",
+      "expected_output": "Recommends GET /v1/files/:key/nodes with ids=45:67 and shallow depth before fetching more deeply, not a full unbounded file read."
+    }
+  ]
+}

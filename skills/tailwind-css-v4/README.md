@@ -11,13 +11,13 @@ mkdir -p .agents/skills
 cp -R tailwind-css-v4 .agents/skills/
 ```
 
-The required entry point is `SKILL.md`. Reference files, eval files, and the audit script are optional resources loaded on demand.
+The required entry point is `SKILL.md`. Reference files, eval files, and the self-contained ESM Bun audit script are optional resources loaded on demand.
 
 ## Optional audit script
 
 ```bash
-node scripts/audit-tailwind-v4.mjs /path/to/project
-node scripts/audit-tailwind-v4.mjs /path/to/project --json
+bun run scripts/audit-tailwind-v4.ts /path/to/project
+bun run scripts/audit-tailwind-v4.ts /path/to/project --json
 ```
 
-The audit script is non-destructive and reports common v3/v4 setup mismatches.
+The ESM audit script is non-destructive and reports common v3/v4 setup mismatches.

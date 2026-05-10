@@ -1,0 +1,30 @@
+{
+  "skill_name": "skill-creator",
+  "evals": [
+    {
+      "id": "create-skill-from-runbook",
+      "prompt": "Create an Agent Skill from a fictional deployment runbook. Include SKILL.md, references, scripts only if useful, and eval ideas.",
+      "expected_output": "A complete, standards-compliant skill package with a valid name, triggerable description, scoped workflow, and validation notes.",
+      "files": [],
+      "assertions": [
+        "The output includes a SKILL.md with YAML frontmatter",
+        "The name is lowercase-hyphenated and matches the skill directory",
+        "The description explains when to use the skill and is under 1024 characters",
+        "The workflow is specific to deployment runbooks rather than generic advice",
+        "Bundled files are referenced with relative paths and clear loading conditions"
+      ]
+    },
+    {
+      "id": "optimize-description",
+      "prompt": "Improve this skill description and write trigger eval queries with near-miss negatives: description: Process documents.",
+      "expected_output": "A more specific imperative description plus trigger eval queries that test both activation and false-trigger boundaries.",
+      "files": [],
+      "assertions": [
+        "The improved description uses imperative activation phrasing",
+        "The description names user intents and relevant artifacts",
+        "The eval queries include both should-trigger and should-not-trigger examples",
+        "At least two negative examples are near misses rather than obviously unrelated prompts"
+      ]
+    }
+  ]
+}
