@@ -1,0 +1,66 @@
+[
+  {
+    "query": "Use beautiful-mermaid to render this Mermaid flowchart to a Tokyo Night SVG and save it as architecture.svg.",
+    "should_trigger": true
+  },
+  {
+    "query": "I need a React component that displays Mermaid diagrams with live CSS variable theming and no async flash.",
+    "should_trigger": true
+  },
+  {
+    "query": "Make this Mermaid graph look polished as an embeddable SVG for our architecture docs; the default Mermaid output looks too plain.",
+    "should_trigger": true
+  },
+  {
+    "query": "Debug this beautiful-mermaid error: Invalid mermaid header: graph LR; A --> B.",
+    "should_trigger": true
+  },
+  {
+    "query": "Wire up fromShikiTheme() so our Mermaid diagrams match the VS Code theme we already load with Shiki.",
+    "should_trigger": true
+  },
+  {
+    "query": "Render an xychart-beta Mermaid chart as an interactive SVG with hover tooltips and a dark theme.",
+    "should_trigger": true
+  },
+  {
+    "query": "Build a small CLI that reads a .mmd file and prints ASCII boxes for CI logs with no ANSI colors.",
+    "should_trigger": true
+  },
+  {
+    "query": "The app currently uses mermaid.js in the browser; migrate the renderer to beautiful-mermaid for synchronous SVG output.",
+    "should_trigger": true
+  },
+  {
+    "query": "Write a Mermaid sequence diagram showing a login flow for my README.",
+    "should_trigger": false
+  },
+  {
+    "query": "Use Mermaid CLI to export this diagram to PNG.",
+    "should_trigger": false
+  },
+  {
+    "query": "Explain the difference between graph TD and flowchart LR in Mermaid syntax.",
+    "should_trigger": false
+  },
+  {
+    "query": "Author a Mermaid Gantt chart for the release schedule; I only need the Mermaid code block.",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a pie chart in Mermaid for our project status report.",
+    "should_trigger": false
+  },
+  {
+    "query": "Generate ASCII art of our product logo from this plain text description.",
+    "should_trigger": false
+  },
+  {
+    "query": "Sanitize this existing SVG string before inserting it with dangerouslySetInnerHTML in React.",
+    "should_trigger": false
+  },
+  {
+    "query": "Can you add Mermaid fences around this architecture diagram text in Markdown?",
+    "should_trigger": false
+  }
+]

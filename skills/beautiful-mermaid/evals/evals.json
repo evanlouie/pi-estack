@@ -1,0 +1,51 @@
+{
+  "skill_name": "beautiful-mermaid",
+  "evals": [
+    {
+      "id": "render-svg-theme",
+      "prompt": "Render this diagram with beautiful-mermaid as a transparent Tokyo Night SVG and write it to diagram.svg: graph TD\\n  A[Start] --> B{Ready?}\\n  B -->|yes| C[Ship]\\n  B -->|no| D[Fix]",
+      "expected_output": "A diagram.svg file or SVG block generated with beautiful-mermaid, using the tokyo-night theme and transparent SVG option.",
+      "assertions": [
+        "The output is SVG, not a Mermaid code block or raster image.",
+        "The response uses or recommends beautiful-mermaid's renderMermaidSVG API or the bundled render script.",
+        "The theme selection is tokyo-night or explicitly equivalent colors.",
+        "The output or command includes transparent background handling."
+      ]
+    },
+    {
+      "id": "react-css-vars",
+      "prompt": "Add a React component for user-provided Mermaid diagrams using beautiful-mermaid. It should follow our app theme through CSS variables and avoid a render flash.",
+      "expected_output": "A React component pattern that uses renderMermaidSVG synchronously inside useMemo with CSS variable colors, error handling, and an explicit trust/sanitization boundary for inserted SVG.",
+      "assertions": [
+        "The component imports renderMermaidSVG from beautiful-mermaid.",
+        "The component uses useMemo or an equivalent synchronous memoization pattern rather than rendering in useEffect.",
+        "The render options pass CSS variable references for bg/fg or related colors.",
+        "The component handles parse/render errors instead of crashing silently.",
+        "The response explicitly addresses trusted input, sanitization, or an equivalent safety boundary before using dangerouslySetInnerHTML or inserting SVG."
+      ]
+    },
+    {
+      "id": "ascii-ci",
+      "prompt": "For a CI comment, convert this Mermaid graph to plain ASCII text with no ANSI escapes: graph LR\\n  Build --> Test\\n  Test --> Deploy",
+      "expected_output": "Plain 7-bit ASCII diagram text generated through renderMermaidASCII or the bundled script with colorMode none and useAscii enabled.",
+      "assertions": [
+        "The answer uses beautiful-mermaid's renderMermaidASCII API or the bundled render script.",
+        "The response disables ANSI colors with colorMode none or an equivalent option.",
+        "The response enables plain 7-bit output with useAscii: true or --use-ascii.",
+        "The output is text suitable for logs or Markdown comments and does not rely on Unicode box-drawing characters.",
+        "The response does not propose a browser-only SVG renderer as the primary solution."
+      ]
+    },
+    {
+      "id": "unsupported-syntax-boundary",
+      "prompt": "Can beautiful-mermaid render a Mermaid gantt chart? If not, what should I do?",
+      "expected_output": "A boundary-aware answer explaining that beautiful-mermaid supports flowchart/state, sequence, class, ER, and xychart-beta, and suggesting Mermaid CLI or another renderer for Gantt.",
+      "assertions": [
+        "The response does not claim full support for every Mermaid diagram type.",
+        "The response lists or references beautiful-mermaid's supported subset.",
+        "The response suggests a Mermaid-compatible alternative for Gantt charts.",
+        "The response avoids inventing a beautiful-mermaid Gantt API."
+      ]
+    }
+  ]
+}
