@@ -15,6 +15,21 @@
       "id": "ag-ui-carrier",
       "prompt": "Wrap an Open-JSON-UI chart payload inside an AG-UI STATE_DELTA event for a frontend that expects delta.ui.spec='open-json-ui'.",
       "expected_output": "A JSON object with type='STATE_DELTA', delta.ui.spec='open-json-ui', and delta.ui.content containing a screen or chart payload with compact chart data."
+    },
+    {
+      "id": "component-catalog-dialect",
+      "prompt": "Produce an Open-JSON-UI payload for a renderer that uses the component-catalog dialect (a top-level 'version' string and a 'components' array). Include a heading, a text component, and a button with a declarative action.",
+      "expected_output": "A JSON object with a string 'version' field and a 'components' array. Each entry has a string 'type' from the standard catalog (heading, text, button), the button uses a declarative action object with 'name' (and optional 'parameters') rather than onClick/JS, and the response notes the dialect when explanatory text is included."
+    },
+    {
+      "id": "reject-malformed-json",
+      "prompt": "A teammate sent this payload: `{type: screen, content: [ { type: 'text' text: 'hi' } ] }` (no quotes around keys, missing comma). Validate it and explain what is wrong.",
+      "expected_output": "Identifies that the payload is not valid JSON (unquoted keys, single quotes, missing comma) and notes that the validator script would exit with code 2 for a JSON parse error. Suggests a corrected JSON document with double-quoted keys/strings and a proper top-level 'type' field."
+    },
+    {
+      "id": "reject-missing-root-type",
+      "prompt": "Validate this payload and explain the problem: {\"content\": [{\"type\": \"text\", \"text\": \"hello\"}]}",
+      "expected_output": "Identifies that the root object is missing a 'type' field (and therefore does not match the screen/content, open-json-ui wrapper, component-catalog, or AG-UI STATE_DELTA carrier dialects). Recommends adding a top-level 'type': 'screen' (or another envelope) so the renderer can dispatch the payload, and notes the validator would report an unrecognized-envelope error."
     }
   ]
 }

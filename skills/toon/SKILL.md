@@ -2,7 +2,7 @@
 name: toon
 description: Use this skill when the user asks to convert JSON to or from TOON, author or validate .toon files, compact structured data for LLM prompts, choose delimiters/key folding/path expansion, compare TOON with JSON/YAML/CSV, or use the @toon-format/toon CLI/API.
 license: MIT
-compatibility: Requires Deno 2.x with npm specifier support; first run may need network access to populate Deno's global cache. The bundled scripts/toon.ts uses pinned npm:@toon-format/toon@2.2.0 via Deno; use the official npx CLI only when Deno is unavailable.
+compatibility: Requires Deno 2.x for the bundled scripts/toon.ts (with npm specifier support), or Node.js with npx as a fallback for the official @toon-format/cli. First run may need network access to populate Deno's global cache. The bundled script pins npm:@toon-format/toon@2.2.0 via Deno; use `npx @toon-format/cli@2.2.0` only when Deno is unavailable.
 metadata:
   source_repository: "https://github.com/toon-format/toon"
   specification_repository: "https://github.com/toon-format/spec"

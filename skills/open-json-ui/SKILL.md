@@ -99,7 +99,9 @@ Use the bundled script for a quick sanity check:
 uv run scripts/validate_open_json_ui.py payload.json
 ```
 
-The script prints structured JSON with `valid`, `dialect`, `errors`, `warnings`, and a component count. It is intentionally permissive: it catches common mistakes without replacing the project renderer’s authoritative schema.
+The script prints structured JSON with `valid`, `dialect`, `errors`, `warnings`, and a component count. The exit code is `0` on success, `1` on validation failures, and `2` on JSON parse/read errors. It is intentionally permissive: it catches common mistakes without replacing the project renderer's authoritative schema.
+
+When the host accepts JSON Schema 2020-12 validation for the `screen/content` dialect, point them at `assets/open-json-ui-screen.schema.json` — it is a standalone JSON Schema describing the recommended flattened screen payload and can be plugged into any 2020-12-compatible validator.
 
 ## Common gotchas
 

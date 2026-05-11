@@ -8,7 +8,7 @@ description: >
 compatibility: Requires Python 3.11+ and uv to run bundled Python scripts; no network access required for normal use.
 metadata:
   version: "1.0.1"
-  docs-reviewed: "2026-05-10"
+  docs-reviewed: "2025-05-10"
 ---
 
 # Skill Creator

@@ -109,4 +109,4 @@ Use `manifest.jsonl` to map each source URL to its Markdown file. If the user ne
 - Some PDFs and image-heavy documents may need OCR or screenshots outside this skill.
 - The script rejects URL-embedded credentials. Do not put secrets in URLs or command lines.
 
-For more detail, read `references/fetching-guidelines.md`.
+Read `references/fetching-guidelines.md` when tuning concurrency, diagnosing manifest errors, or choosing an impersonation/protocol option.

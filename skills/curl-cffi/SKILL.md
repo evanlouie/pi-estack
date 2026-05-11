@@ -138,11 +138,9 @@ curl-cffi doctor
 
 ## Reference lookup
 
-Read these files when the task needs more detail:
-
-- `references/python-api.md` — requests-like API, sessions, async, WebSockets, multipart, streaming, proxies, HTTP versions, retries, and low-level curl options.
-- `references/impersonation-and-cli.md` — impersonation target selection, default browser headers, custom fingerprints, fingerprint updates, and CLI request syntax.
-- `references/security-and-troubleshooting.md` — SSRF-safe redirects, TLS verification, cookies, proxy gotchas, common protocol errors, and packaging notes.
+- Read `references/python-api.md` when the task involves writing or reviewing Python `curl_cffi` code — requests-like calls, `Session`/`AsyncSession`, WebSockets, `CurlMime`/multipart uploads, streaming, proxies, HTTP version selection, `RetryStrategy`, or low-level `Curl`/`curl_options`/`CurlOpt` usage.
+- Read `references/impersonation-and-cli.md` when the task involves choosing or pinning an `impersonate=` target, managing default browser headers, supplying `ja3`/`akamai`/`extra_fp` custom fingerprints, upgrading bundled fingerprints, or writing/debugging `curl-cffi` CLI commands (including `run` for `.http`/`.har` files and `doctor`).
+- Read `references/security-and-troubleshooting.md` when the task involves user-supplied URLs or SSRF concerns, `CurlFollow.SAFE`/redirect handling, TLS verification errors, cookie persistence, proxy failures, HTTP/2 `PROTOCOL_ERROR` debugging, response encoding overrides, PyInstaller packaging, or production hardening review.
 
 ## Gotchas
 

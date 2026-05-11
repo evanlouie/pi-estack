@@ -4,6 +4,11 @@
 
   By default this script runs in dry-run mode and prints the files/tokens it would change.
   It only rewrites deterministic class-token changes that do not require design judgment.
+
+  Arbitrary CSS variable shorthand: utilities of the form `<util>-[--x]` and the
+  more common `<util>-[var(--x)]` are both rewritten to the v4 shorthand
+  `<util>-(--x)`. This applies uniformly to any utility prefix (e.g. `bg-`,
+  `text-`, `border-`, `fill-`, etc.).
 */
 
 import { extname, join, relative, resolve, sep } from "node:path";
@@ -275,6 +280,10 @@ Options:
   --max-file-size BYTES  Skip larger files (default: 1000000)
   --help                Show this help
 
+Notes:
+  Rewrites both \`<util>-[--x]\` and \`<util>-[var(--x)]\` to the v4 shorthand
+  \`<util>-(--x)\` for any utility prefix.
+
 Examples:
   deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project ~/app --dry-run
   deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project ~/app --write
@@ -455,7 +464,14 @@ function skipRegexLiteral(text: string, start: number): number {
 function transformToken(token: string): string {
   let transformed = token;
 
-  // v4 arbitrary variable shorthand: bg-[--brand-color] -> bg-(--brand-color)
+  // v4 arbitrary variable shorthand:
+  //   bg-[--brand-color]      -> bg-(--brand-color)
+  //   bg-[var(--brand-color)] -> bg-(--brand-color)
+  // Applies to any utility prefix (bg-, text-, border-, fill-, ring-, ...).
+  transformed = transformed.replace(
+    /(^|:)([A-Za-z0-9_/-]+)-\[var\((--[^)\s]+)\)\]/g,
+    "$1$2-($3)",
+  );
   transformed = transformed.replace(
     /(^|:)([A-Za-z0-9_/-]+)-\[(--[^\]\s]+)\]/g,
     "$1$2-($3)",

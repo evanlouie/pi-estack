@@ -103,7 +103,7 @@ EVALS_JSON = """{{
 }}
 """
 
-EXAMPLE_SCRIPT = """#!/usr/bin/env python3
+EXAMPLE_SCRIPT_PYTHON = """#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11,<4"
 # dependencies = []
@@ -126,6 +126,25 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+"""
+
+EXAMPLE_SCRIPT_TYPESCRIPT = """#!/usr/bin/env -S deno run --allow-read
+// Example helper script for an Agent Skill. Replace with real reusable logic.
+// Self-contained Deno TypeScript script; no external dependencies required.
+
+function main(args: string[]): number {
+  if (args.length < 1) {
+    console.error("Usage: example.ts VALUE");
+    return 2;
+  }
+  const [value] = args;
+  console.log(JSON.stringify({ value }, null, 2));
+  return 0;
+}
+
+if (import.meta.main) {
+  Deno.exit(main(Deno.args));
+}
 """
 
 
@@ -164,13 +183,22 @@ def validate_name(name: str) -> None:
 def build_optional_sections(args: argparse.Namespace) -> str:
     sections: list[str] = []
     if args.with_scripts:
-        sections.append(
-            """## Available scripts
+        if args.script_language == "typescript":
+            sections.append(
+                """## Available scripts
+
+- `scripts/example.ts` — Example Deno TypeScript helper script created by the scaffolder. Replace it with real reusable logic before relying on it.
+
+Run it from the skill root with `deno run --allow-read scripts/example.ts VALUE`."""
+            )
+        else:
+            sections.append(
+                """## Available scripts
 
 - `scripts/example.py` — Example helper script created by the scaffolder. Replace it with real reusable logic before relying on it.
 
 Run it from the skill root with `uv run scripts/example.py VALUE`."""
-        )
+            )
     return "\n\n" + "\n\n".join(sections) if sections else ""
 
 
@@ -212,8 +240,12 @@ def scaffold(args: argparse.Namespace) -> Path:
     if args.with_assets:
         write_file(root / "assets" / "README.md", ASSETS_README, args.force)
     if args.with_scripts:
-        script_path = root / "scripts" / "example.py"
-        write_file(script_path, EXAMPLE_SCRIPT, args.force)
+        if args.script_language == "typescript":
+            script_path = root / "scripts" / "example.ts"
+            write_file(script_path, EXAMPLE_SCRIPT_TYPESCRIPT, args.force)
+        else:
+            script_path = root / "scripts" / "example.py"
+            write_file(script_path, EXAMPLE_SCRIPT_PYTHON, args.force)
         try:
             script_path.chmod(0o755)
         except OSError:
@@ -244,7 +276,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Directory that will contain the new skill directory (default: current directory)",
     )
     parser.add_argument(
-        "--with-scripts", action="store_true", help="Create scripts/example.py"
+        "--with-scripts",
+        action="store_true",
+        help="Create an example script under scripts/ (language controlled by --script-language)",
+    )
+    parser.add_argument(
+        "--script-language",
+        choices=["python", "typescript"],
+        default="python",
+        help="Language for the scaffolded example script when --with-scripts is set (default: python)",
     )
     parser.add_argument(
         "--with-references", action="store_true", help="Create references/README.md"

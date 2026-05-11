@@ -36,8 +36,14 @@ a2ui/
 
 ```bash
 cd a2ui
-uv run scripts/validate_a2ui.py assets/examples/a2ui_v09_booking_form.json --format text
-uv run scripts/validate_a2ui.py assets/examples/a2ui_v08_profile_card.jsonl --format text
+uv run --script scripts/validate_a2ui.py assets/examples/a2ui_v09_booking_form.json --format text
+uv run --script scripts/validate_a2ui.py assets/examples/a2ui_v08_profile_card.jsonl --format text
+```
+
+The script uses a PEP 723 inline-metadata header, so `uv run --script` is recommended to ensure inline metadata is honored (bare `uv run` may not reliably honor it outside a uv project). Alternatively, the script is executable via its shebang (`#!/usr/bin/env -S uv run --script`) and can be invoked directly:
+
+```bash
+./scripts/validate_a2ui.py assets/examples/a2ui_v09_booking_form.json --format text
 ```
 
 The script performs lightweight structural validation. It is not a full official schema validator.

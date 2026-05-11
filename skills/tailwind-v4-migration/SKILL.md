@@ -19,20 +19,33 @@ Use this skill to move an existing Tailwind CSS v3.x codebase to v4.x safely. Tr
    - Identify the package manager from lockfiles and scripts.
    - Check `node --version`; the official Tailwind upgrade tool requires Node.js 20+.
    - Identify Tailwind entry CSS files, `tailwind.config.*`, PostCSS/Vite configs, package scripts, component file types, and browser support requirements.
-   - Run the audit script before changing files:
+   - Run the audit script before changing files. Run all skill scripts from this skill's directory (do not `cd` into the target project) and pass the target with `--project`:
      ```bash
      deno run --allow-read scripts/audit_tailwind_v4_migration.ts --project /path/to/project --format markdown > /path/to/project/tailwind-v4-audit.md
      ```
 
-2. **Prefer the official upgrade tool when the project allows it**
+2. **Choose ONE rename strategy: official upgrade tool OR the codemod script (not both)**
+
+   These two approaches are mutually exclusive for deterministic class renames. Running the codemod after the official upgrade tool can double-apply renames (e.g., `shadow-sm` → `shadow-xs` on the first pass, then `shadow-xs` would be untouched but `shadow` → `shadow-sm` could re-shift already-correct classes, and similar chains for `rounded`, `blur`, `drop-shadow`, `backdrop-blur`). Pick exactly one of the following:
+
+   **Option A (preferred): Official upgrade tool.** Use this when the project meets the tool's requirements (Node.js 20+, clean branch, supported framework layout).
    - Use a clean branch.
    - Run the package-manager equivalent of:
      ```bash
      npx @tailwindcss/upgrade
      ```
    - Review the entire diff. The tool can update dependencies, migrate configuration to CSS, and rewrite many template classes, but complex projects still need manual review.
+   - **Do NOT run `scripts/replace_tailwind_v4_renames.ts` afterward.** The official tool has already applied these renames.
 
-3. **Manual migration pass**
+   **Option B (alternative): Deterministic codemod script.** Use this only when (a) the official upgrade tool was NOT used (e.g., it failed, is incompatible, or the project requires a manual path), or (b) you are running it on a fresh v3 baseline that has not yet had any v4 rename pass applied.
+   - Confirm the project is on a clean migration branch.
+   - Dry-run first:
+     ```bash
+     deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project /path/to/project --dry-run
+     ```
+   - Only use `--write` after reviewing the preview.
+
+3. **Manual migration pass (always required)**
    - Replace v3 CSS entry directives with `@import "tailwindcss";`.
    - Update build integration:
      - PostCSS: use `@tailwindcss/postcss`, not `tailwindcss` as the PostCSS plugin.
@@ -42,11 +55,6 @@ Use this skill to move an existing Tailwind CSS v3.x codebase to v4.x safely. Tr
      - Prefer CSS-first config using `@theme`, `@utility`, `@custom-variant`, `@source`, and `@plugin` where appropriate.
      - Use `@config "../../tailwind.config.js";` as a temporary bridge only when needed.
      - Do not rely on `corePlugins`, `safelist`, or `separator` in a JS config; they are not supported in v4.
-   - Apply deterministic class/token changes. For a dry run:
-     ```bash
-     deno run --allow-read --allow-write scripts/replace_tailwind_v4_renames.ts --project /path/to/project --dry-run
-     ```
-     Only use `--write` after reviewing the preview and confirming the project is on a migration branch.
 
 4. **Manual visual and behavioral review**
    - Inspect all findings in `tailwind-v4-audit.md`.
@@ -69,13 +77,12 @@ Use this skill to move an existing Tailwind CSS v3.x codebase to v4.x safely. Tr
 - Read `references/CSS_CONFIG_REFERENCE.md` when converting `tailwind.config.*` to CSS-first configuration.
 - Read `references/FRAMEWORK_NOTES.md` when the project uses Vite, PostCSS, CLI builds, Vue, Svelte, Astro, CSS modules, Sass, Less, Stylus, a monorepo, or third-party Tailwind component packages.
 - Read `references/TROUBLESHOOTING.md` when the v4 build fails or utilities are missing.
+- `references/SOURCES.md` exists for citation purposes; read it when you need to cite or link to the upstream Tailwind v4 documentation referenced by the other files in this skill.
 
 ## Available scripts
 
 - `scripts/audit_tailwind_v4_migration.ts` — scans a project and reports likely v3-to-v4 migration issues. It does not modify files.
-- `scripts/replace_tailwind_v4_renames.ts` — performs a conservative dry-run or write-mode rewrite of deterministic class renames. It intentionally skips changes that require design judgment.
-
-Run scripts from the skill directory and pass the target project path with `--project`.
+- `scripts/replace_tailwind_v4_renames.ts` — performs a conservative dry-run or write-mode rewrite of deterministic class renames. It intentionally skips changes that require design judgment. **Do not run this after `npx @tailwindcss/upgrade`** — see Step 2.
 
 ## Gotchas to keep in memory
 

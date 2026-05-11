@@ -27,8 +27,8 @@ Commands:
   roundtrip   Encode JSON to TOON, decode it back, compare, and optionally write outputs.
 
 Options:
-  -o, --output <file>          Output path. For validate, writes the JSON result. For roundtrip, writes restored JSON.
-  --toon-output <file>         Roundtrip-only: write encoded TOON to this path.
+  -o, --output <file>          Output path (use "-" for stdout). For validate, writes the JSON result. For roundtrip, writes restored JSON.
+  --toon-output <file>         Roundtrip-only: write encoded TOON to this path (use "-" for stdout).
   --delimiter <value>          comma, ",", tab, "\\t", pipe, or "|" (default: comma)
   --indent <number>            Spaces per indentation level (default: 2)
   --keyFolding <off|safe>      Encode option for safe dotted-key folding (default: off)
@@ -38,6 +38,14 @@ Options:
   --compact                    Decode JSON output without indentation
   --stats                      Encode-only: print JSON/TOON size statistics to stderr
   -h, --help                   Show this help
+
+Exit codes (encode, decode, validate, roundtrip):
+  0  success (for validate: input is valid TOON; for roundtrip: JSON round-tripped equal)
+  1  error (invalid TOON, invalid JSON input, IO failure, round-trip mismatch, etc.)
+
+Note: roundtrip always writes its JSON status report (equal, byte count, output paths)
+to stdout, even when --output is given. The --output path receives the restored JSON,
+--toon-output receives the encoded TOON, and the status report still goes to stdout.
 
 Examples:
   deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode data.json -o data.toon
@@ -247,7 +255,7 @@ async function readInput(path?: string): Promise<string> {
 }
 
 async function writeOutput(text: string, outputPath?: string): Promise<void> {
-  if (!outputPath) {
+  if (!outputPath || outputPath === "-") {
     writeStdout(text);
     return;
   }

@@ -12,6 +12,16 @@ metadata:
 
 Use Microsoft MarkItDown to convert source files or trusted public URLs into Markdown optimized for LLM ingestion and text analysis.
 
+## Available scripts
+
+- `scripts/convert_to_markdown.py` — Convert one or more local files or trusted public URLs to Markdown via MarkItDown, with safer defaults, JSON summaries, and batch support.
+
+## Exit codes
+
+- `0` — all requested conversions succeeded.
+- `1` — one or more per-input conversion errors (e.g., unreadable file, blocked URL, MarkItDown failure).
+- `2` — configuration error (invalid CLI arguments or option combination, e.g., `--output` with multiple inputs, missing credentials for a requested option).
+
 ## Default workflow
 
 1. Identify the input files or URLs, the requested output location, and whether the user needs local-only conversion, remote URL conversion, plugins, Azure Document Intelligence, or LLM-generated image descriptions.
@@ -67,6 +77,13 @@ Use an LLM client for image descriptions only when the user asked for it and the
 ```bash
 uv run scripts/convert_to_markdown.py ./diagram.png --llm-model "$MODEL" --output-dir ./converted --json
 ```
+
+`--llm-model` uses the OpenAI Python client under the hood, so it also works with any OpenAI-compatible endpoint by setting standard env vars before running the script:
+
+- `OPENAI_BASE_URL` — base URL of the OpenAI-compatible API (e.g., a local LLM server like Ollama/llama.cpp/LM Studio, or an Anthropic-via-proxy gateway).
+- `OPENAI_API_KEY` — API key accepted by that endpoint (use a placeholder like `sk-local` for local servers that don't require auth).
+
+The `--llm-model` value must be a model name the configured endpoint recognizes.
 
 ## When to use plugins
 

@@ -27,8 +27,7 @@ type Summary = {
   findings: Finding[];
 };
 
-const usage =
-  `Usage: deno run --allow-read scripts/audit-tailwind-v4.ts [--json] [--] [project-dir]
+const usage = `Usage: deno run --allow-read scripts/audit-tailwind-v4.ts [--json] [--] [project-dir]
 
 Non-destructively scans a project for common Tailwind CSS v4 setup and migration issues.
 
@@ -211,7 +210,8 @@ const hasTailwind = Object.hasOwn(deps, "tailwindcss");
 const hasVitePlugin = Object.hasOwn(deps, "@tailwindcss/vite");
 const hasPostcssPlugin = Object.hasOwn(deps, "@tailwindcss/postcss");
 const hasCli = Object.hasOwn(deps, "@tailwindcss/cli");
-const hasVite = Object.hasOwn(deps, "vite") ||
+const hasVite =
+  Object.hasOwn(deps, "vite") ||
   files.some((file: string) => /vite\.config\.[cm]?[jt]s$/.test(file));
 
 if (!exists("package.json")) {
@@ -225,6 +225,34 @@ if (!exists("package.json")) {
     "warning",
     "tailwindcss package not found",
     "Install tailwindcss before using Tailwind v4 in this project.",
+  );
+} else {
+  const tailwindVersion = deps["tailwindcss"];
+  if (tailwindVersion && /^\s*[\^~]?3(?:\.|$)|^\s*3\.x/.test(tailwindVersion)) {
+    add(
+      "warning",
+      "tailwindcss pinned to v3",
+      `package.json has tailwindcss@${tailwindVersion}. Upgrade to v4 to use the CSS-first workflow.`,
+      ["package.json"],
+    );
+  }
+}
+
+if (Object.hasOwn(deps, "postcss-import")) {
+  add(
+    "warning",
+    "postcss-import dependency present",
+    "Tailwind v4 handles @import natively. Remove postcss-import from dependencies/devDependencies.",
+    ["package.json"],
+  );
+}
+
+if (Object.hasOwn(deps, "autoprefixer")) {
+  add(
+    "warning",
+    "autoprefixer dependency present",
+    "Tailwind v4 includes vendor prefixing. Remove autoprefixer from dependencies/devDependencies.",
+    ["package.json"],
   );
 }
 
@@ -267,7 +295,7 @@ for (const file of postcssFiles) {
 }
 
 const viteFiles = files.filter((file: string) =>
-  /vite\.config\.[cm]?[jt]s$/.test(file)
+  /vite\.config\.[cm]?[jt]s$/.test(file),
 );
 for (const file of viteFiles) {
   const body = Deno.readTextFileSync(file);
@@ -299,7 +327,7 @@ for (const [name, command] of Object.entries(scripts)) {
 }
 
 const tailwindConfigs = files.filter((file: string) =>
-  /tailwind\.config\.[cm]?[jt]s$/.test(file)
+  /tailwind\.config\.[cm]?[jt]s$/.test(file),
 );
 for (const file of tailwindConfigs) {
   const body = Deno.readTextFileSync(file);
@@ -313,11 +341,9 @@ for (const file of tailwindConfigs) {
     add(
       "warning",
       "JavaScript Tailwind config contains v3-style options",
-      `Review these options for v4 CSS-first migration: ${
-        unsupported.join(
-          ", ",
-        )
-      }.`,
+      `Review these options for v4 CSS-first migration: ${unsupported.join(
+        ", ",
+      )}.`,
       [rel(file)],
     );
   } else {
@@ -331,7 +357,7 @@ for (const file of tailwindConfigs) {
 }
 
 const cssFiles = files.filter((file: string) =>
-  /\.(css|pcss|postcss)$/.test(file)
+  /\.(css|pcss|postcss)$/.test(file),
 );
 let hasImportTailwind = false;
 
@@ -363,7 +389,7 @@ for (const file of cssFiles) {
 }
 
 const componentStyleFiles = files.filter((file: string) =>
-  /\.(vue|svelte|astro)$/.test(file)
+  /\.(vue|svelte|astro)$/.test(file),
 );
 for (const file of componentStyleFiles) {
   const body = Deno.readTextFileSync(file);
@@ -389,11 +415,9 @@ const dynamicPattern =
   /(?:bg|text|border|ring|from|via|to|fill|stroke)-\$\{|\$\{[^}]+\}-(?:50|100|200|300|400|500|600|700|800|900|950)/;
 const dynamicFiles: string[] = [];
 
-for (
-  const file of files.filter((candidate: string) =>
-    /\.(jsx|tsx|vue|svelte|astro|js|ts)$/.test(candidate)
-  )
-) {
+for (const file of files.filter((candidate: string) =>
+  /\.(jsx|tsx|vue|svelte|astro|js|ts)$/.test(candidate),
+)) {
   const body = Deno.readTextFileSync(file);
   if (dynamicPattern.test(body)) dynamicFiles.push(rel(file));
   if (dynamicFiles.length >= 20) break;

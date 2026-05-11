@@ -58,6 +58,11 @@ EVENT_HANDLER_KEY_PATTERN = re.compile(
 )
 
 
+EXIT_OK = 0
+EXIT_VALIDATION_FAILED = 1
+EXIT_JSON_ERROR = 2
+
+
 class ValidationState:
     def __init__(self) -> None:
         self.errors: list[str] = []
@@ -218,6 +223,9 @@ def validate_component(
     if ctype == "image" and not isinstance(props.get("alt"), str):
         state.warn(path, "image should include an 'alt' string for accessibility")
 
+    # Keys whose contents are already validated in the explicit branches above.
+    already_validated = {"content", "items", "fields", "actions"}
+
     for key, value in component.items():
         child_path = f"{path}.{key}"
         if EVENT_HANDLER_KEY_PATTERN.match(key):
@@ -226,10 +234,11 @@ def validate_component(
                 "event-handler field names are not declarative; use an action object with name and parameters",
             )
 
+        if key in already_validated:
+            # Already handled above for the relevant component types.
+            continue
         if key == "properties" and isinstance(value, dict):
             validate_any(value, f"{path}.properties", state)
-        elif key in {"content", "items", "fields", "actions"}:
-            validate_any(value, child_path, state)
         else:
             validate_any(value, child_path, state)
 
@@ -278,7 +287,14 @@ def validate_root(root: Any) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Permissive Open-JSON-UI sanity validator"
+        description="Permissive Open-JSON-UI sanity validator",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Exit codes:\n"
+            "  0  payload validated successfully (no errors)\n"
+            "  1  payload parsed but failed validation (one or more errors)\n"
+            "  2  input could not be read or parsed as JSON\n"
+        ),
     )
     parser.add_argument("path", help="JSON file to validate, or '-' for stdin")
     parser.add_argument(
@@ -286,10 +302,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    json_error = False
     try:
         root = load_json(args.path)
         result = validate_root(root)
     except ValueError as exc:
+        json_error = True
         result = {
             "valid": False,
             "dialect": "invalid-json",
@@ -300,7 +318,9 @@ def main() -> int:
 
     json.dump(result, sys.stdout, indent=2 if args.pretty else None, sort_keys=True)
     sys.stdout.write("\n")
-    return 0 if result["valid"] else 1
+    if json_error:
+        return EXIT_JSON_ERROR
+    return EXIT_OK if result["valid"] else EXIT_VALIDATION_FAILED
 
 
 if __name__ == "__main__":

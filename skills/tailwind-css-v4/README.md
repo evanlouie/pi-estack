@@ -20,4 +20,4 @@ deno run --allow-read scripts/audit-tailwind-v4.ts /path/to/project
 deno run --allow-read scripts/audit-tailwind-v4.ts /path/to/project --json
 ```
 
-The ESM audit script is non-destructive and reports common v3/v4 setup mismatches.
+The Deno TypeScript audit script is non-destructive and reports common v3/v4 setup mismatches.

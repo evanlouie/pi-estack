@@ -16,6 +16,17 @@
       "id": "node-scoped-fetch-plan",
       "prompt": "I only care about node 45:67 in this Figma file. What should you fetch first?",
       "expected_output": "Recommends GET /v1/files/:key/nodes with ids=45:67 and shallow depth before fetching more deeply, not a full unbounded file read."
+    },
+    {
+      "id": "find-by-name",
+      "prompt": "Using evals/files/sample-figma-file.json, find any nodes whose name matches 'button|cta|checkout' across FRAME, COMPONENT, INSTANCE, and TEXT types.",
+      "expected_output": "Runs `scripts/figma_read.py find evals/files/sample-figma-file.json --name 'button|cta|checkout' --types FRAME COMPONENT INSTANCE TEXT` and reports the matching node ids, names, and types.",
+      "files": ["evals/files/sample-figma-file.json"]
+    },
+    {
+      "id": "missing-token-403",
+      "prompt": "I tried to fetch a private Figma file and got a 403, and I have not set FIGMA_TOKEN. How should I proceed?",
+      "expected_output": "Explains that 403 typically means the token is missing, expired, lacks scopes, or lacks file access; instructs the user to export FIGMA_TOKEN (or FIGMA_OAUTH_TOKEN for bearer) with at least file_content:read; notes that --auth auto picks X-Figma-Token for FIGMA_TOKEN and Bearer for FIGMA_OAUTH_TOKEN; warns not to paste tokens in prompts."
     }
   ]
 }

@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires uv and Python 3.11+ for bundled scripts. Network access and a Figma token with file_content:read are required for API fetches; local Figma API JSON can be parsed without network.
 metadata:
   version: "1.0.0"
-  author: "OpenAI"
+  author: "evanlouie"
 ---
 
 # Figma file reading and parsing
@@ -28,9 +28,10 @@ The user gives a Figma URL, file key, node link, exported Figma API JSON, design
 
 - `scripts/figma_read.py` — self-contained Python CLI for parsing Figma URLs, fetching API JSON with caching and 429 retry handling, summarizing file structure, searching nodes, and extracting design-token candidates.
 
-Run commands from the skill directory root:
+Run `uv run scripts/...` commands from the skill directory root (cd into `skills/figma-file-reader` first), matching the invocation shown in `README.md`:
 
 ```bash
+cd skills/figma-file-reader
 uv run scripts/figma_read.py --help
 ```
 
@@ -45,6 +46,8 @@ export FIGMA_ACCESS_TOKEN="<access-or-plan-token>"
 # or, for OAuth bearer tokens
 export FIGMA_OAUTH_TOKEN="<oauth-access-token>"
 ```
+
+The script's default `--auth auto` picks the header based on token source: `FIGMA_OAUTH_TOKEN` → `Authorization: Bearer <token>`; `FIGMA_TOKEN` / `FIGMA_ACCESS_TOKEN` / `--token` → `X-Figma-Token: <token>`. Override with `--auth bearer` or `--auth x-figma-token` when needed.
 
 Use a token with at least `file_content:read` for file and node JSON. Read `references/figma-api-notes.md` before using variables, comments, dev resources, images, or metadata-only endpoints.
 
