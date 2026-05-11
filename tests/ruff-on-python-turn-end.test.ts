@@ -16,8 +16,8 @@ import { match, P } from "ts-pattern";
 import registerRuffExtension, {
   createToolResultHandler,
   createTurnEndHandler,
-  RUFF_CHECK_ARGS,
   type PendingRuffFiles,
+  RUFF_CHECK_ARGS,
 } from "../extensions/ruff-on-python-turn-end.js";
 
 type ExecCall = {
@@ -54,7 +54,12 @@ function okResult(): ExecResult {
 }
 
 function failureResult(): ExecResult {
-  return { stdout: "", stderr: "F401 imported but unused", code: 1, killed: false };
+  return {
+    stdout: "",
+    stderr: "F401 imported but unused",
+    code: 1,
+    killed: false,
+  };
 }
 
 function killedResult(): ExecResult {
@@ -280,7 +285,10 @@ void describe("ruff on Python turn end extension", () => {
     const pendingFiles: PendingRuffFiles = new Map();
     const { pi, calls } = createMockPi();
     await createToolResultHandler(pendingFiles)(writeEvent("main.ts"), createContext(cwd));
-    await createToolResultHandler(pendingFiles)(writeEvent("src/main.py", true), createContext(cwd));
+    await createToolResultHandler(pendingFiles)(
+      writeEvent("src/main.py", true),
+      createContext(cwd),
+    );
     await createTurnEndHandler(pi, pendingFiles)(turnEndEvent(), createContext(cwd));
 
     assert.equal(calls.length, 0);
@@ -312,7 +320,10 @@ void describe("ruff on Python turn end extension", () => {
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0]?.args, expectedRuffArgs(join(cwd, "src/main.py")));
     assert.equal(messages.length, 1);
-    assert.deepEqual(messages[0]?.options, { deliverAs: "steer", triggerTurn: true });
+    assert.deepEqual(messages[0]?.options, {
+      deliverAs: "steer",
+      triggerTurn: true,
+    });
     assert.equal(messages[0]?.message.customType, "ruff-turn-end");
     assert.equal(messages[0]?.message.display, true);
     assert.match(firstMessageContent(messages), /ruff check failed/);
@@ -341,7 +352,10 @@ void describe("ruff on Python turn end extension", () => {
 
     assert.equal(calls.length, 1);
     assert.equal(messages.length, 1);
-    assert.deepEqual(messages[0]?.options, { deliverAs: "steer", triggerTurn: true });
+    assert.deepEqual(messages[0]?.options, {
+      deliverAs: "steer",
+      triggerTurn: true,
+    });
     assert.match(firstMessageContent(messages), /process was killed or timed out/);
   });
 

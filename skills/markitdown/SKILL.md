@@ -10,29 +10,40 @@ metadata:
 
 # MarkItDown
 
-Use Microsoft MarkItDown to convert source files or trusted public URLs into Markdown optimized for LLM ingestion and text analysis.
+Use Microsoft MarkItDown to convert source files or trusted public URLs into
+Markdown optimized for LLM ingestion and text analysis.
 
 ## Available scripts
 
-- `scripts/convert_to_markdown.py` — Convert one or more local files or trusted public URLs to Markdown via MarkItDown, with safer defaults, JSON summaries, and batch support.
+- `scripts/convert_to_markdown.py` — Convert one or more local files or trusted
+  public URLs to Markdown via MarkItDown, with safer defaults, JSON summaries,
+  and batch support.
 
 ## Exit codes
 
 - `0` — all requested conversions succeeded.
-- `1` — one or more per-input conversion errors (e.g., unreadable file, blocked URL, MarkItDown failure).
-- `2` — configuration error (invalid CLI arguments or option combination, e.g., `--output` with multiple inputs, missing credentials for a requested option).
+- `1` — one or more per-input conversion errors (e.g., unreadable file, blocked
+  URL, MarkItDown failure).
+- `2` — configuration error (invalid CLI arguments or option combination, e.g.,
+  `--output` with multiple inputs, missing credentials for a requested option).
 
 ## Default workflow
 
-1. Identify the input files or URLs, the requested output location, and whether the user needs local-only conversion, remote URL conversion, plugins, Azure Document Intelligence, or LLM-generated image descriptions.
-2. Prefer the bundled helper script for repeatable conversion and safer defaults:
+1. Identify the input files or URLs, the requested output location, and whether
+   the user needs local-only conversion, remote URL conversion, plugins, Azure
+   Document Intelligence, or LLM-generated image descriptions.
+2. Prefer the bundled helper script for repeatable conversion and safer
+   defaults:
 
 ```bash
 uv run scripts/convert_to_markdown.py INPUT_FILE --output-dir OUTPUT_DIR --json
 ```
 
-3. Verify the result before returning it: confirm the Markdown file exists, is non-empty, and has plausible headings/tables/text for the source type.
-4. Report output paths and any conversion limitations. Do not claim high-fidelity visual/layout preservation; MarkItDown is intended for structured Markdown content, not exact visual reproduction.
+3. Verify the result before returning it: confirm the Markdown file exists, is
+   non-empty, and has plausible headings/tables/text for the source type.
+4. Report output paths and any conversion limitations. Do not claim
+   high-fidelity visual/layout preservation; MarkItDown is intended for
+   structured Markdown content, not exact visual reproduction.
 
 ## Common commands
 
@@ -60,34 +71,42 @@ Write a single conversion to an explicit file:
 uv run scripts/convert_to_markdown.py ./deck.pptx --output ./deck.md --overwrite --json
 ```
 
-Convert a trusted public URL only when the user explicitly asks for URL conversion:
+Convert a trusted public URL only when the user explicitly asks for URL
+conversion:
 
 ```bash
 uv run scripts/convert_to_markdown.py 'https://example.com/page.html' --allow-remote --output-dir ./converted --json
 ```
 
-Use Azure Document Intelligence for a PDF when the user requested it and provided/approved the endpoint:
+Use Azure Document Intelligence for a PDF when the user requested it and
+provided/approved the endpoint:
 
 ```bash
 uv run scripts/convert_to_markdown.py ./scanned.pdf --docintel-endpoint "$AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT" --output-dir ./converted --json
 ```
 
-Use an LLM client for image descriptions only when the user asked for it and the required credentials are available:
+Use an LLM client for image descriptions only when the user asked for it and the
+required credentials are available:
 
 ```bash
 uv run scripts/convert_to_markdown.py ./diagram.png --llm-model "$MODEL" --output-dir ./converted --json
 ```
 
-`--llm-model` uses the OpenAI Python client under the hood, so it also works with any OpenAI-compatible endpoint by setting standard env vars before running the script:
+`--llm-model` uses the OpenAI Python client under the hood, so it also works
+with any OpenAI-compatible endpoint by setting standard env vars before running
+the script:
 
-- `OPENAI_BASE_URL` — base URL of the OpenAI-compatible API (e.g., a local LLM server like Ollama/llama.cpp/LM Studio, or an Anthropic-via-proxy gateway).
-- `OPENAI_API_KEY` — API key accepted by that endpoint (use a placeholder like `sk-local` for local servers that don't require auth).
+- `OPENAI_BASE_URL` — base URL of the OpenAI-compatible API (e.g., a local LLM
+  server like Ollama/llama.cpp/LM Studio, or an Anthropic-via-proxy gateway).
+- `OPENAI_API_KEY` — API key accepted by that endpoint (use a placeholder like
+  `sk-local` for local servers that don't require auth).
 
 The `--llm-model` value must be a model name the configured endpoint recognizes.
 
 ## When to use plugins
 
-Plugins are disabled by default. Enable them only when the user asks for plugin behavior or when a conversion requires a known installed plugin:
+Plugins are disabled by default. Enable them only when the user asks for plugin
+behavior or when a conversion requires a known installed plugin:
 
 ```bash
 uv run scripts/convert_to_markdown.py ./file.pdf --use-plugins --output-dir ./converted --json
@@ -107,7 +126,9 @@ For a simple trusted local file, the direct CLI is acceptable:
 uvx --from 'markitdown[all]>=0.1.5,<0.2' markitdown path-to-file.pdf -o document.md
 ```
 
-Use the bundled script instead for batch conversion, explicit JSON summaries, URL safety checks, output naming, overwrite control, Azure/LLM options, or format hints.
+Use the bundled script instead for batch conversion, explicit JSON summaries,
+URL safety checks, output naming, overwrite control, Azure/LLM options, or
+format hints.
 
 ## Format hints
 
@@ -121,18 +142,31 @@ Use `--charset UTF-8` for ambiguous text encodings.
 
 ## Safety and privacy defaults
 
-- Treat inputs as sensitive. Convert local files locally unless the user explicitly requests a remote service, Azure Document Intelligence, plugins, or LLM image descriptions.
-- Do not run MarkItDown on untrusted paths or URLs in hosted/server contexts without validation. The helper script is local-only unless `--allow-remote` is supplied, and it blocks private, loopback, link-local, reserved, multicast, and non-HTTP(S) remote destinations.
-- Do not enable plugins automatically. Third-party plugins may run additional code or make external calls.
-- Do not send private files to Azure Document Intelligence or an LLM client unless the user explicitly requests it.
+- Treat inputs as sensitive. Convert local files locally unless the user
+  explicitly requests a remote service, Azure Document Intelligence, plugins, or
+  LLM image descriptions.
+- Do not run MarkItDown on untrusted paths or URLs in hosted/server contexts
+  without validation. The helper script is local-only unless `--allow-remote` is
+  supplied, and it blocks private, loopback, link-local, reserved, multicast,
+  and non-HTTP(S) remote destinations.
+- Do not enable plugins automatically. Third-party plugins may run additional
+  code or make external calls.
+- Do not send private files to Azure Document Intelligence or an LLM client
+  unless the user explicitly requests it.
 - For very large files, convert one at a time and check output incrementally.
 
 ## Troubleshooting
 
-- Empty or low-quality PDF output: the file may be scanned/image-only. Ask whether OCR, Azure Document Intelligence, or a MarkItDown OCR plugin should be used; do not silently send the file externally.
-- Broken tables: try converting the source spreadsheet/CSV directly rather than a PDF export.
+- Empty or low-quality PDF output: the file may be scanned/image-only. Ask
+  whether OCR, Azure Document Intelligence, or a MarkItDown OCR plugin should be
+  used; do not silently send the file externally.
+- Broken tables: try converting the source spreadsheet/CSV directly rather than
+  a PDF export.
 - Misdetected type: use `--extension`, `--mime-type`, or `--charset`.
-- Remote conversion failure: download the public file separately if appropriate, then convert the local copy.
-- Plugin conversion failure: list installed plugins, confirm the requested plugin is installed, and retry with `--use-plugins` only for that file.
+- Remote conversion failure: download the public file separately if appropriate,
+  then convert the local copy.
+- Plugin conversion failure: list installed plugins, confirm the requested
+  plugin is installed, and retry with `--use-plugins` only for that file.
 
-Read `references/markitdown-reference.md` for supported formats, API notes, and CLI option details.
+Read `references/markitdown-reference.md` for supported formats, API notes, and
+CLI option details.

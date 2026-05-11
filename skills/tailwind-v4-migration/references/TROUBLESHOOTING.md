@@ -1,6 +1,7 @@
 # Tailwind v4 migration troubleshooting
 
-Use this when the migration builds fail, utilities are missing, or visual output changes unexpectedly.
+Use this when the migration builds fail, utilities are missing, or visual output
+changes unexpectedly.
 
 ## `@tailwind base` / `@tailwind components` / `@tailwind utilities` no longer works
 
@@ -38,7 +39,8 @@ export default defineConfig({
 });
 ```
 
-Confirm the CSS entry is imported by the app and not only by a storybook/test harness.
+Confirm the CSS entry is imported by the app and not only by a storybook/test
+harness.
 
 ## CLI command no longer works
 
@@ -78,11 +80,13 @@ v4 does not auto-detect JS config files. Use an explicit bridge while migrating:
 @config "../../tailwind.config.js";
 ```
 
-Then migrate supported values into CSS. Do not depend on JS config `corePlugins`, `safelist`, or `separator`.
+Then migrate supported values into CSS. Do not depend on JS config
+`corePlugins`, `safelist`, or `separator`.
 
 ## Safelisted classes are missing
 
-v4 does not support JS config `safelist` the same way. Prefer full static class names in source code or use `@source inline()`:
+v4 does not support JS config `safelist` the same way. Prefer full static class
+names in source code or use `@source inline()`:
 
 ```css
 @source inline("{hover:,}bg-red-{50,{100..900..100},950}");
@@ -92,7 +96,8 @@ For backend or CMS options, generate a finite static list and register it.
 
 ## Classes in a shared package are missing
 
-Automatic source detection ignores dependencies such as `node_modules`. Register the package path from the CSS entry:
+Automatic source detection ignores dependencies such as `node_modules`. Register
+the package path from the CSS entry:
 
 ```css
 @source "../node_modules/@acmecorp/ui-lib";
@@ -106,7 +111,8 @@ In monorepos:
 
 ## Classes are missing in a monorepo
 
-The build may run from a different working directory than expected. Set the scan base:
+The build may run from a different working directory than expected. Set the scan
+base:
 
 ```css
 @import "tailwindcss" source("./src");
@@ -122,7 +128,8 @@ Or disable automatic detection and register sources explicitly:
 
 ## Dynamic class names stopped working
 
-Tailwind does not evaluate runtime string concatenation. Replace interpolated fragments with complete static class strings.
+Tailwind does not evaluate runtime string concatenation. Replace interpolated
+fragments with complete static class strings.
 
 Before:
 
@@ -138,12 +145,13 @@ const statusClasses = {
   success: "text-green-600",
 };
 
-<div className={statusClasses[status]}></div>
+<div className={statusClasses[status]}></div>;
 ```
 
 ## `@apply` fails in Vue/Svelte/Astro/CSS modules
 
-Add `@reference` to import theme variables/custom utilities/custom variants without duplicating CSS:
+Add `@reference` to import theme variables/custom utilities/custom variants
+without duplicating CSS:
 
 ```css
 @reference "../app.css";
@@ -163,7 +171,8 @@ Alternative: use CSS variables instead of `@apply`.
 
 ## Sass/Less/Stylus processing fails
 
-Tailwind v4 is not designed to be used with CSS preprocessors as the Tailwind processing path. Move Tailwind directives into plain CSS.
+Tailwind v4 is not designed to be used with CSS preprocessors as the Tailwind
+processing path. Move Tailwind directives into plain CSS.
 
 ```css
 /* app.css */
@@ -174,17 +183,20 @@ Tailwind v4 is not designed to be used with CSS preprocessors as the Tailwind pr
 }
 ```
 
-Keep Sass/Less/Stylus only for separate non-Tailwind styles if the project still needs them.
+Keep Sass/Less/Stylus only for separate non-Tailwind styles if the project still
+needs them.
 
 ## Borders look too dark, inherit text color, or changed color
 
-v4 default border and divide color is `currentColor`, not gray-200. Add explicit colors:
+v4 default border and divide color is `currentColor`, not gray-200. Add explicit
+colors:
 
 ```html
 <div class="border border-gray-200"></div>
 ```
 
-If the whole project depends on v3 default border color, add a compatibility base style and document it:
+If the whole project depends on v3 default border color, add a compatibility
+base style and document it:
 
 ```css
 @layer base {
@@ -206,7 +218,8 @@ Use explicit width and color:
 <button class="focus:ring-3 focus:ring-blue-500"></button>
 ```
 
-Use compatibility variables only if the migration needs a temporary global bridge:
+Use compatibility variables only if the migration needs a temporary global
+bridge:
 
 ```css
 @theme {
@@ -233,11 +246,13 @@ v4 changed the selector. Use flex/grid gap where possible:
 <div class="flex flex-col gap-4"></div>
 ```
 
-Inspect components that combined `space-*` utilities with child margins or inline elements.
+Inspect components that combined `space-*` utilities with child margins or
+inline elements.
 
 ## Hover behavior changed on touch devices
 
-v4 `hover:` applies only when the primary input device supports hover. Prefer making hover an enhancement. If the product truly needs old behavior, define:
+v4 `hover:` applies only when the primary input device supports hover. Prefer
+making hover an enhancement. If the product truly needs old behavior, define:
 
 ```css
 @custom-variant hover (&:hover);
@@ -257,7 +272,8 @@ For multiple transforms, reset each relevant property.
 
 ## Transition of transform utilities stopped working
 
-v4 transform utilities use individual properties. Replace `transform` in arbitrary transition lists with the specific properties:
+v4 transform utilities use individual properties. Replace `transform` in
+arbitrary transition lists with the specific properties:
 
 ```html
 <button class="transition-[opacity,scale] hover:scale-150"></button>
@@ -319,7 +335,8 @@ Replace commas that represented spaces with underscores:
 
 ## Typography/custom plugin classes are missing
 
-Check plugin compatibility. Use v4 plugin instructions when available. Bridge legacy JS plugins with:
+Check plugin compatibility. Use v4 plugin instructions when available. Bridge
+legacy JS plugins with:
 
 ```css
 @plugin "@tailwindcss/typography";
@@ -331,8 +348,10 @@ Then validate generated plugin styles in the browser.
 
 1. Confirm the CSS entry is loaded by the app.
 2. Confirm build integration package: Vite, PostCSS, or CLI.
-3. Confirm `@import "tailwindcss";` exists exactly once in the main Tailwind CSS entry.
+3. Confirm `@import "tailwindcss";` exists exactly once in the main Tailwind CSS
+   entry.
 4. Run the audit script.
-5. Check missing classes for dynamic construction, ignored source paths, or missing `@theme` variables.
+5. Check missing classes for dynamic construction, ignored source paths, or
+   missing `@theme` variables.
 6. Check visual changes against the v4 breaking-change reference.
 7. Run a production build and browser review.

@@ -69,7 +69,9 @@ function cljKondoFailureReason(result: ExecResult): string {
 function turnEndFailureMessage(paths: PendingCljKondoFile[], reason: string): string {
   const files = paths.map(({ displayPath }) => `- ${displayPath}`).join("\n");
   return [
-    `${CLJ_KONDO_COMMAND} ${CLJ_KONDO_LINT_ARGS.join(" ")} failed after the last turn for ${paths.length} changed Clojure file(s):`,
+    `${CLJ_KONDO_COMMAND} ${CLJ_KONDO_LINT_ARGS.join(
+      " ",
+    )} failed after the last turn for ${paths.length} changed Clojure file(s):`,
     files,
     "",
     reason,
@@ -79,7 +81,9 @@ function turnEndFailureMessage(paths: PendingCljKondoFile[], reason: string): st
 }
 
 function turnEndSuccessMessage(paths: PendingCljKondoFile[]): string {
-  return `Ran ${CLJ_KONDO_COMMAND} ${CLJ_KONDO_LINT_ARGS.join(" ")} on ${paths.length} changed Clojure file(s)`;
+  return `Ran ${CLJ_KONDO_COMMAND} ${CLJ_KONDO_LINT_ARGS.join(
+    " ",
+  )} on ${paths.length} changed Clojure file(s)`;
 }
 
 function recordPendingFile(
@@ -132,9 +136,14 @@ export function createToolResultHandler(
 ): ExtensionHandler<ToolResultEvent, ToolResultPatch> {
   return (event, ctx) =>
     match({ event, path: editOrWritePath(event) })
-      .with({ path: P.when((path) => isSuccessfulClojureMutation(event, path)) }, ({ path }) => {
-        recordPendingFile(pendingFiles, ctx, path);
-      })
+      .with(
+        {
+          path: P.when((path) => isSuccessfulClojureMutation(event, path)),
+        },
+        ({ path }) => {
+          recordPendingFile(pendingFiles, ctx, path);
+        },
+      )
       .otherwise(() => undefined);
 }
 

@@ -4,7 +4,9 @@ Use this as the operational checklist after the skill activates.
 
 ## 0. Migration readiness
 
-- Confirm browser support. Tailwind v4 is for modern browsers: Safari 16.4+, Chrome 111+, and Firefox 128+. If the product must support older browsers, document the risk and consider staying on v3.4.
+- Confirm browser support. Tailwind v4 is for modern browsers: Safari 16.4+,
+  Chrome 111+, and Firefox 128+. If the product must support older browsers,
+  document the risk and consider staying on v3.4.
 - Confirm the workspace has a clean migration branch.
 - Confirm Node.js 20+ before using `npx @tailwindcss/upgrade`.
 - Identify package manager from lockfiles:
@@ -13,7 +15,8 @@ Use this as the operational checklist after the skill activates.
   - `bun.lock` or `bun.lockb` → `bun`
   - `deno.lock` → `deno`
   - `package-lock.json` → `npm`
-- Find Tailwind entry CSS files, `tailwind.config.*`, PostCSS/Vite configs, CLI scripts, and framework files using `@apply`.
+- Find Tailwind entry CSS files, `tailwind.config.*`, PostCSS/Vite configs, CLI
+  scripts, and framework files using `@apply`.
 
 ## 1. Audit before changes
 
@@ -23,7 +26,8 @@ From the skill directory:
 deno run --allow-read scripts/audit_tailwind_v4_migration.ts --project /path/to/project --format markdown > /path/to/project/tailwind-v4-audit.md
 ```
 
-Use this audit to plan manual work. The script flags likely issues; it is not a substitute for building and viewing the app.
+Use this audit to plan manual work. The script flags likely issues; it is not a
+substitute for building and viewing the app.
 
 ## 2. Run the official upgrade tool when possible
 
@@ -33,7 +37,9 @@ Use a clean branch:
 npx @tailwindcss/upgrade
 ```
 
-For non-npm package managers, use the local equivalent only if that is normal for the project, such as `pnpm dlx @tailwindcss/upgrade`, `yarn dlx @tailwindcss/upgrade`, or `bunx @tailwindcss/upgrade`.
+For non-npm package managers, use the local equivalent only if that is normal
+for the project, such as `pnpm dlx @tailwindcss/upgrade`,
+`yarn dlx @tailwindcss/upgrade`, or `bunx @tailwindcss/upgrade`.
 
 After running:
 
@@ -47,7 +53,8 @@ git diff -- '*.css' '*.scss' '*.sass' '*.less' '*.styl' '*.js' '*.jsx' '*.ts' '*
 
 ### PostCSS
 
-v3 commonly used `tailwindcss` directly as a PostCSS plugin. v4 uses `@tailwindcss/postcss`.
+v3 commonly used `tailwindcss` directly as a PostCSS plugin. v4 uses
+`@tailwindcss/postcss`.
 
 Before:
 
@@ -70,7 +77,8 @@ export default {
 };
 ```
 
-Remove `autoprefixer` and `postcss-import` only if they were present solely for Tailwind processing.
+Remove `autoprefixer` and `postcss-import` only if they were present solely for
+Tailwind processing.
 
 ### Vite
 
@@ -85,7 +93,8 @@ export default defineConfig({
 });
 ```
 
-If the project already has framework plugins, keep them and add `tailwindcss()` according to the framework’s ordering expectations.
+If the project already has framework plugins, keep them and add `tailwindcss()`
+according to the framework’s ordering expectations.
 
 ### CLI
 
@@ -113,7 +122,8 @@ After:
 @import "tailwindcss";
 ```
 
-If the build runs from a monorepo root and automatic source detection is too broad or too narrow, set the source base explicitly:
+If the build runs from a monorepo root and automatic source detection is too
+broad or too narrow, set the source base explicitly:
 
 ```css
 @import "tailwindcss" source("../src");
@@ -130,7 +140,8 @@ Default approach:
 3. Convert custom utilities that need variants to `@utility`.
 4. Register ignored sources with `@source`.
 5. Use `@plugin` for legacy JS plugins only when needed.
-6. Use `@config` only as a temporary bridge for legacy config that cannot be migrated immediately.
+6. Use `@config` only as a temporary bridge for legacy config that cannot be
+   migrated immediately.
 
 Do not rely on these JS config options in v4:
 
@@ -138,7 +149,8 @@ Do not rely on these JS config options in v4:
 - `safelist`
 - `separator`
 
-For safelisting, use statically detectable full class names or `@source inline()`.
+For safelisting, use statically detectable full class names or
+`@source inline()`.
 
 ## 6. Deterministic codemod pass
 
@@ -160,7 +172,9 @@ Then review:
 git diff
 ```
 
-The codemod intentionally does not rewrite opacity utilities, dynamic classes, `border` color assumptions, or layout behavior changes because those require design judgment.
+The codemod intentionally does not rewrite opacity utilities, dynamic classes,
+`border` color assumptions, or layout behavior changes because those require
+design judgment.
 
 ## 7. Manual class and behavior fixes
 
@@ -183,7 +197,8 @@ Use `references/FRAMEWORK_NOTES.md` for framework-specific notes. Common checks:
 - Vue/Svelte/Astro/CSS modules with `@apply` need `@reference`.
 - Sass/Less/Stylus should not be used as the Tailwind entry path in v4.
 - External UI packages ignored by automatic detection need `@source`.
-- Monorepo builds may need `source()` or `source(none)` plus explicit `@source` paths.
+- Monorepo builds may need `source()` or `source(none)` plus explicit `@source`
+  paths.
 
 ## 9. Validation commands
 
@@ -213,27 +228,32 @@ Also run a browser review for:
 # Tailwind v4 migration report
 
 ## Summary
+
 - Migration status:
 - Branch/commit:
 - Tailwind version:
 - Build integration:
 
 ## Changed
+
 - Dependencies:
 - CSS entry/config:
 - Class/codemod updates:
 - Framework-specific fixes:
 
 ## Validation
+
 - Commands run:
 - Browser routes/screens checked:
 - Result:
 
 ## Remaining risks
+
 - Risk 1:
 - Risk 2:
 
 ## Files to review
+
 - tailwind-v4-audit.md
 - package/config diffs
 - CSS entry/config files

@@ -4,7 +4,8 @@ Use this when drafting or revising the instructions inside a skill.
 
 ## Start from real expertise
 
-Good skills capture specific knowledge that a general-purpose model would not reliably infer. Useful source material includes:
+Good skills capture specific knowledge that a general-purpose model would not
+reliably infer. Useful source material includes:
 
 - Completed agent workflows and transcripts
 - User corrections and preferences
@@ -13,7 +14,8 @@ Good skills capture specific knowledge that a general-purpose model would not re
 - Code review comments, incident reports, and issue history
 - Real failures and fixes
 
-Avoid generic filler such as “follow best practices” unless the skill defines the concrete practice.
+Avoid generic filler such as “follow best practices” unless the skill defines
+the concrete practice.
 
 ## Extract reusable patterns
 
@@ -33,13 +35,17 @@ Write a method that generalizes beyond the single example.
 A good skill covers one coherent unit of work. Use this test:
 
 - If the skill has multiple unrelated triggers, split it.
-- If a normal task needs three or more skills to complete one workflow, merge related pieces.
+- If a normal task needs three or more skills to complete one workflow, merge
+  related pieces.
 - If the description needs many exceptions, the scope is probably wrong.
-- If the agent already does the task reliably without special context, the skill may not be needed.
+- If the agent already does the task reliably without special context, the skill
+  may not be needed.
 
 ## Spend context wisely
 
-Once activated, the full `SKILL.md` competes with the user request, tools, conversation history, and other active skills. Add only material that changes agent behavior.
+Once activated, the full `SKILL.md` competes with the user request, tools,
+conversation history, and other active skills. Add only material that changes
+agent behavior.
 
 Keep in `SKILL.md`:
 
@@ -60,13 +66,16 @@ Move to references/assets:
 
 ## Match specificity to fragility
 
-Be flexible where many valid approaches exist. Explain the purpose of the step so the agent can adapt.
+Be flexible where many valid approaches exist. Explain the purpose of the step
+so the agent can adapt.
 
-Be prescriptive where order, safety, compliance, or exact commands matter. Use exact commands and say not to modify them when appropriate.
+Be prescriptive where order, safety, compliance, or exact commands matter. Use
+exact commands and say not to modify them when appropriate.
 
 ## Prefer defaults over menus
 
-When several tools could work, choose a default. Mention alternatives only as escape hatches.
+When several tools could work, choose a default. Mention alternatives only as
+escape hatches.
 
 Weak:
 
@@ -77,12 +86,14 @@ You can use pypdf, pdfplumber, PyMuPDF, or pdf2image.
 Stronger:
 
 ```markdown
-Use pdfplumber for text extraction. For scanned documents requiring OCR, use pdf2image with pytesseract instead.
+Use pdfplumber for text extraction. For scanned documents requiring OCR, use
+pdf2image with pytesseract instead.
 ```
 
 ## Favor procedures over declarations
 
-A skill should teach an approach, not encode one answer. Use reusable algorithms, checklists, and validation loops.
+A skill should teach an approach, not encode one answer. Use reusable
+algorithms, checklists, and validation loops.
 
 Weak:
 
@@ -103,19 +114,23 @@ Stronger:
 
 ### Gotchas
 
-Put non-obvious facts in a dedicated `## Gotchas` section. These are high-value because they prevent predictable mistakes.
+Put non-obvious facts in a dedicated `## Gotchas` section. These are high-value
+because they prevent predictable mistakes.
 
 ```markdown
 ## Gotchas
-- The production API returns `accountId`, but the warehouse uses `user_id`; they refer to the same entity.
-- `/health` only confirms the web server is running. Use `/ready` for database readiness.
+
+- The production API returns `accountId`, but the warehouse uses `user_id`; they
+  refer to the same entity.
+- `/health` only confirms the web server is running. Use `/ready` for database
+  readiness.
 ```
 
 ### Output templates
 
 Use concrete templates when formatting consistency matters.
 
-```markdown
+````markdown
 ## Output format
 
 ```text
@@ -124,8 +139,9 @@ Files changed: [list]
 Validation: [commands run and result]
 Next steps: [only if required]
 ```
-```
+````
 
+````
 ### Checklists
 
 Use checklists for multi-step workflows or workflows with dependencies.
@@ -137,7 +153,7 @@ Use checklists for multi-step workflows or workflows with dependencies.
 - [ ] Validate the plan.
 - [ ] Execute the plan.
 - [ ] Verify outputs.
-```
+````
 
 ### Validation loops
 

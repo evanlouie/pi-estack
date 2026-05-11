@@ -10,11 +10,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { match, P } from "ts-pattern";
-import {
-  commandInvocation,
-  resolveToCwd,
-  runCommand,
-} from "../extensions/lib/command-runner.js";
+import { commandInvocation, resolveToCwd, runCommand } from "../extensions/lib/command-runner.js";
 
 type ExecCall = {
   command: string;
@@ -47,12 +43,7 @@ void describe("command runner helpers", () => {
       commandInvocation("C:\\tools\\oxlint.cmd", ["--fix", "C:\\repo\\src\\main.ts"], "win32"),
       {
         command: "cmd.exe",
-        args: [
-          "/d",
-          "/s",
-          "/c",
-          '"C:\\tools\\oxlint.cmd" "--fix" "C:\\repo\\src\\main.ts"',
-        ],
+        args: ["/d", "/s", "/c", '"C:\\tools\\oxlint.cmd" "--fix" "C:\\repo\\src\\main.ts"'],
       },
     );
   });
@@ -91,7 +82,12 @@ void describe("command runner helpers", () => {
 
   void test("returns a missing binary result without calling exec", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "pi-estack-runner-missing-test-"));
-    const { pi, calls } = createMockPi({ stdout: "", stderr: "", code: 0, killed: false });
+    const { pi, calls } = createMockPi({
+      stdout: "",
+      stderr: "",
+      code: 0,
+      killed: false,
+    });
     const result = await runCommand(pi, createContext(cwd), {
       command: "definitely-not-installed-pi-estack-test-command",
       args: ["--version"],

@@ -24,9 +24,18 @@
             "paddingTop": 32,
             "paddingBottom": 32,
             "cornerRadius": 12,
-            "absoluteBoundingBox": { "x": 0, "y": 0, "width": 390, "height": 844 },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 0,
+              "width": 390,
+              "height": 844
+            },
             "fills": [
-              { "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1 }, "opacity": 1 }
+              {
+                "type": "SOLID",
+                "color": { "r": 1, "g": 1, "b": 1 },
+                "opacity": 1
+              }
             ],
             "children": [
               {
@@ -44,7 +53,11 @@
                 },
                 "styles": { "text": "S:heading-lg" },
                 "fills": [
-                  { "type": "SOLID", "color": { "r": 0.067, "g": 0.067, "b": 0.067 }, "opacity": 1 }
+                  {
+                    "type": "SOLID",
+                    "color": { "r": 0.067, "g": 0.067, "b": 0.067 },
+                    "opacity": 1
+                  }
                 ]
               },
               {
@@ -54,11 +67,18 @@
                 "componentId": "99:1",
                 "cornerRadius": 8,
                 "fills": [
-                  { "type": "SOLID", "color": { "r": 0.10, "g": 0.33, "b": 0.94 }, "opacity": 1 }
+                  {
+                    "type": "SOLID",
+                    "color": { "r": 0.1, "g": 0.33, "b": 0.94 },
+                    "opacity": 1
+                  }
                 ],
                 "boundVariables": {
                   "fills": [
-                    { "type": "VARIABLE_ALIAS", "id": "VariableID:color-brand-primary" }
+                    {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:color-brand-primary"
+                    }
                   ]
                 },
                 "children": [
@@ -76,7 +96,11 @@
                       "letterSpacing": 0
                     },
                     "fills": [
-                      { "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1 }, "opacity": 1 }
+                      {
+                        "type": "SOLID",
+                        "color": { "r": 1, "g": 1, "b": 1 },
+                        "opacity": 1
+                      }
                     ]
                   }
                 ]

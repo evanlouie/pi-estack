@@ -6,11 +6,14 @@ Source repositories:
 - Specification: https://github.com/toon-format/spec
 - Documentation: https://toonformat.dev
 
-This guide is a practical operating reference for agents. For exact normative wording, consult the specification repository.
+This guide is a practical operating reference for agents. For exact normative
+wording, consult the specification repository.
 
 ## What TOON is
 
-TOON encodes the JSON data model in a line-oriented text format. It keeps objects readable through indentation and makes uniform arrays compact by declaring array length and field names once.
+TOON encodes the JSON data model in a line-oriented text format. It keeps
+objects readable through indentation and makes uniform arrays compact by
+declaring array length and field names once.
 
 A typical JSON object:
 
@@ -37,19 +40,25 @@ Use TOON when:
 
 - The user is preparing structured data for an LLM prompt.
 - Data includes uniform arrays of objects, especially multiple fields per row.
-- Exact array lengths and fixed row widths help catch truncation or malformed output.
-- The user asks for `.toon`, `text/toon`, `@toon-format/toon`, or JSON↔TOON conversion.
+- Exact array lengths and fixed row widths help catch truncation or malformed
+  output.
+- The user asks for `.toon`, `text/toon`, `@toon-format/toon`, or JSON↔TOON
+  conversion.
 
 Avoid or benchmark TOON when:
 
 - Data is deeply nested and non-uniform; compact JSON may be smaller.
 - Data is a flat table only; CSV is usually smaller.
-- The user needs a public API format or long-term application storage; JSON is more standard.
-- Latency is the top priority; compact representations can affect model/runtime behavior differently.
+- The user needs a public API format or long-term application storage; JSON is
+  more standard.
+- Latency is the top priority; compact representations can affect model/runtime
+  behavior differently.
 
 ## Conversion commands
 
-Bundled script. The `--node-modules-dir=none` and `--no-lock` flags keep runs from creating local `node_modules` or lockfiles; first run may need network access to cache the pinned package globally.
+Bundled script. The `--node-modules-dir=none` and `--no-lock` flags keep runs
+from creating local `node_modules` or lockfiles; first run may need network
+access to cache the pinned package globally.
 
 ```bash
 deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode input.json -o output.toon
@@ -79,26 +88,26 @@ echo '{"name":"Ada","role":"dev"}' | deno run --no-lock --node-modules-dir=none 
 Use the official TypeScript package when writing application code:
 
 ```ts
-import { encode, decode } from '@toon-format/toon'
+import { decode, encode } from "@toon-format/toon";
 
 const data = {
   users: [
-    { id: 1, name: 'Alice', role: 'admin' },
-    { id: 2, name: 'Bob', role: 'user' },
+    { id: 1, name: "Alice", role: "admin" },
+    { id: 2, name: "Bob", role: "user" },
   ],
-}
+};
 
-const toon = encode(data, { delimiter: ',', keyFolding: 'off' })
-const restored = decode(toon, { strict: true })
+const toon = encode(data, { delimiter: ",", keyFolding: "off" });
+const restored = decode(toon, { strict: true });
 ```
 
 For large output, stream lines:
 
 ```ts
-import { encodeLines } from '@toon-format/toon'
+import { encodeLines } from "@toon-format/toon";
 
-for (const line of encodeLines(data, { delimiter: '\t' })) {
-  process.stdout.write(`${line}\n`)
+for (const line of encodeLines(data, { delimiter: "\t" })) {
+  process.stdout.write(`${line}\n`);
 }
 ```
 
@@ -124,7 +133,8 @@ Unquoted tokens decode as:
 
 - `true` and `false` → booleans
 - `null` → null
-- Decimal/exponent numeric tokens → numbers, unless they have forbidden leading zeros
+- Decimal/exponent numeric tokens → numbers, unless they have forbidden leading
+  zeros
 - Otherwise → strings
 
 Quoted tokens always decode as strings.
@@ -155,7 +165,8 @@ Each inner primitive array is a list item with its own header.
 
 ### Uniform arrays of objects
 
-Tabular form applies when every array element is an object, all objects have the same keys, and all row values are primitive:
+Tabular form applies when every array element is an object, all objects have the
+same keys, and all row values are primitive:
 
 ```toon
 items[2]{sku,qty,price}:
@@ -172,7 +183,8 @@ Rules:
 
 ### Mixed arrays and nested arrays
 
-Use expanded list form when data is non-uniform or contains nested arrays/objects:
+Use expanded list form when data is non-uniform or contains nested
+arrays/objects:
 
 ```toon
 events[3]:
@@ -194,7 +206,8 @@ users[2]:
     name: Bob
 ```
 
-When the first field of a list-item object is itself a tabular array, put the header on the hyphen line and rows two levels deeper:
+When the first field of a list-item object is itself a tabular array, put the
+header on the hyphen line and rows two levels deeper:
 
 ```toon
 items[1]:
@@ -212,10 +225,12 @@ Quote string values when they:
 - Have leading or trailing whitespace.
 - Equal `true`, `false`, or `null`.
 - Look numeric, including exponent-like strings or leading-zero decimals.
-- Contain colon, quote, backslash, brackets, braces, newline, carriage return, tab, or the active delimiter.
+- Contain colon, quote, backslash, brackets, braces, newline, carriage return,
+  tab, or the active delimiter.
 - Are exactly `-` or begin with `-`.
 
-Escapes inside quoted strings and keys are limited to `\\`, `\"`, `\n`, `\r`, and `\t`.
+Escapes inside quoted strings and keys are limited to `\\`, `\"`, `\n`, `\r`,
+and `\t`.
 
 Do not invent other escapes such as `\xNN` or `\uNNNN`.
 
@@ -265,7 +280,8 @@ With `expandPaths: "safe"`, it decodes as:
 
 ## Delimiters
 
-TOON supports comma, tab, and pipe delimiters. The delimiter applies to inline primitive arrays and tabular rows within the nearest array header.
+TOON supports comma, tab, and pipe delimiters. The delimiter applies to inline
+primitive arrays and tabular rows within the nearest array header.
 
 Comma default:
 
@@ -283,7 +299,8 @@ items[2|]{sku|name}:
   B2|Gadget
 ```
 
-Tab uses actual tab characters in the bracket, fields, and rows. Prefer a tool for tab-delimited output:
+Tab uses actual tab characters in the bracket, fields, and rows. Prefer a tool
+for tab-delimited output:
 
 ```bash
 deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode data.json --delimiter tab -o data.toon
@@ -292,7 +309,8 @@ deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/to
 Delimiter strategy:
 
 - Comma is the default and easiest to read.
-- Tab often tokenizes well for large tabular prompts and rarely appears in values.
+- Tab often tokenizes well for large tabular prompts and rarely appears in
+  values.
 - Pipe is useful when values contain many commas.
 
 ## Key folding and path expansion
@@ -316,7 +334,9 @@ deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/to
 deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
-Safe folding only folds identifier-like segments and avoids collisions. Do not enable path expansion unless the user wants dotted keys reconstructed as nested objects.
+Safe folding only folds identifier-like segments and avoids collisions. Do not
+enable path expansion unless the user wants dotted keys reconstructed as nested
+objects.
 
 ## Strict validation checklist
 

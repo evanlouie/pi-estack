@@ -4,7 +4,8 @@ Use this file when writing or reviewing `curl_cffi` Python code.
 
 ## Imports
 
-Prefer explicit imports that make it clear this is not the third-party `requests` package:
+Prefer explicit imports that make it clear this is not the third-party
+`requests` package:
 
 ```python
 from curl_cffi import requests
@@ -20,7 +21,8 @@ from curl_cffi import requests as crequests
 
 ## Requests-like API
 
-`requests.get`, `post`, `put`, `delete`, `patch`, `head`, `options`, `trace`, and `query` are aliases over `request(method, url, **kwargs)`.
+`requests.get`, `post`, `put`, `delete`, `patch`, `head`, `options`, `trace`,
+and `query` are aliases over `request(method, url, **kwargs)`.
 
 Common kwargs:
 
@@ -48,11 +50,14 @@ r.json()         # parsed JSON
 r.raise_for_status()
 ```
 
-For high-level request errors, catch `exceptions.RequestException` or specific subclasses such as `exceptions.HTTPError` and `exceptions.Timeout`. Reserve `CurlError` for low-level `Curl` code.
+For high-level request errors, catch `exceptions.RequestException` or specific
+subclasses such as `exceptions.HTTPError` and `exceptions.Timeout`. Reserve
+`CurlError` for low-level `Curl` code.
 
 ## Sessions
 
-Use `Session` whenever more than one request may share cookies, headers, connection reuse, impersonation, retry settings, or redirects.
+Use `Session` whenever more than one request may share cookies, headers,
+connection reuse, impersonation, retry settings, or redirects.
 
 ```python
 from curl_cffi import requests
@@ -65,7 +70,9 @@ with requests.Session(impersonate="chrome", timeout=15) as s:
     profile.raise_for_status()
 ```
 
-`Session` is thread-safe, but use a separate session per thread for simpler lifecycle and isolation. Session-level parameters are overridden by request-level parameters.
+`Session` is thread-safe, but use a separate session per thread for simpler
+lifecycle and isolation. Session-level parameters are overridden by
+request-level parameters.
 
 ## Retries
 
@@ -83,7 +90,8 @@ with requests.Session(retry=strategy, timeout=15) as s:
 
 ## AsyncSession
 
-Use `AsyncSession` for concurrent HTTP requests. Prefer `async with` and tune `max_clients` to the expected concurrency and target limits.
+Use `AsyncSession` for concurrent HTTP requests. Prefer `async with` and tune
+`max_clients` to the expected concurrency and target limits.
 
 ```python
 import asyncio
@@ -124,7 +132,8 @@ Async iteration yields raw `bytes`; decode or parse them explicitly.
 
 ## POST data
 
-Use `data=` for form fields or bytes, `json=` for JSON, and `multipart=` with `CurlMime` for uploads.
+Use `data=` for form fields or bytes, `json=` for JSON, and `multipart=` with
+`CurlMime` for uploads.
 
 ```python
 requests.post(url, data={"name": "Alice"})          # form-encoded
@@ -147,7 +156,8 @@ finally:
 
 ## Streaming
 
-`stream=True` supports iterative-style streaming, but the response begins streaming immediately. Consume immediately:
+`stream=True` supports iterative-style streaming, but the response begins
+streaming immediately. Consume immediately:
 
 ```python
 with requests.Session() as s:
@@ -179,7 +189,8 @@ Use `proxies=` only when HTTP and HTTPS should route differently:
 requests.get(url, proxies={"http": "http://localhost:3128", "https": "http://localhost:3128"})
 ```
 
-Environment variables `http_proxy`, `https_proxy`, `ws_proxy`, and `wss_proxy` can also apply when `trust_env=True`.
+Environment variables `http_proxy`, `https_proxy`, `ws_proxy`, and `wss_proxy`
+can also apply when `trust_env=True`.
 
 ## HTTP versions
 
@@ -200,7 +211,8 @@ from curl_cffi import CurlHttpVersion, requests
 r = requests.get(url, http_version=CurlHttpVersion.V1_1)
 ```
 
-Use HTTP/3 only when the target and network path support it. Keep a fallback path to HTTP/2 or HTTP/1.1.
+Use HTTP/3 only when the target and network path support it. Keep a fallback
+path to HTTP/2 or HTTP/1.1.
 
 ## Low-level curl options
 
@@ -215,7 +227,8 @@ r = requests.get(
 )
 ```
 
-Use low-level `Curl` only for tasks that cannot be represented by the requests-like API:
+Use low-level `Curl` only for tasks that cannot be represented by the
+requests-like API:
 
 ```python
 from io import BytesIO
@@ -234,7 +247,8 @@ finally:
 
 ## Self-contained scripts
 
-When creating a standalone Python script for the user, include PEP 723 metadata and pin the major/minor range:
+When creating a standalone Python script for the user, include PEP 723 metadata
+and pin the major/minor range:
 
 ```python
 # /// script

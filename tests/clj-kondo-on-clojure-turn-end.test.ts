@@ -14,9 +14,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { match, P } from "ts-pattern";
 import registerCljKondoExtension, {
+  CLJ_KONDO_LINT_ARGS,
   createToolResultHandler,
   createTurnEndHandler,
-  CLJ_KONDO_LINT_ARGS,
   type PendingCljKondoFiles,
 } from "../extensions/clj-kondo-on-clojure-turn-end.js";
 
@@ -239,7 +239,12 @@ void describe("clj-kondo on Clojure turn end extension", () => {
     const cwd = await withCljKondoOnPath();
     const pendingFiles: PendingCljKondoFiles = new Map();
     const { pi, calls } = createMockPi();
-    await collectAndRunTurnEnd(pi, pendingFiles, writeFilePathEvent("deps.edn"), createContext(cwd));
+    await collectAndRunTurnEnd(
+      pi,
+      pendingFiles,
+      writeFilePathEvent("deps.edn"),
+      createContext(cwd),
+    );
 
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0]?.args, expectedCljKondoArgs(join(cwd, "deps.edn")));
@@ -286,7 +291,10 @@ void describe("clj-kondo on Clojure turn end extension", () => {
     const pendingFiles: PendingCljKondoFiles = new Map();
     const { pi, calls } = createMockPi();
     await createToolResultHandler(pendingFiles)(writeEvent("main.ts"), createContext(cwd));
-    await createToolResultHandler(pendingFiles)(writeEvent("src/core.clj", true), createContext(cwd));
+    await createToolResultHandler(pendingFiles)(
+      writeEvent("src/core.clj", true),
+      createContext(cwd),
+    );
     await createTurnEndHandler(pi, pendingFiles)(turnEndEvent(), createContext(cwd));
 
     assert.equal(calls.length, 0);
@@ -318,7 +326,10 @@ void describe("clj-kondo on Clojure turn end extension", () => {
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0]?.args, expectedCljKondoArgs(join(cwd, "src/core.clj")));
     assert.equal(messages.length, 1);
-    assert.deepEqual(messages[0]?.options, { deliverAs: "steer", triggerTurn: true });
+    assert.deepEqual(messages[0]?.options, {
+      deliverAs: "steer",
+      triggerTurn: true,
+    });
     assert.equal(messages[0]?.message.customType, "clj-kondo-turn-end");
     assert.equal(messages[0]?.message.display, true);
     assert.match(firstMessageContent(messages), /clj-kondo --lint failed/);
@@ -347,7 +358,10 @@ void describe("clj-kondo on Clojure turn end extension", () => {
 
     assert.equal(calls.length, 1);
     assert.equal(messages.length, 1);
-    assert.deepEqual(messages[0]?.options, { deliverAs: "steer", triggerTurn: true });
+    assert.deepEqual(messages[0]?.options, {
+      deliverAs: "steer",
+      triggerTurn: true,
+    });
     assert.match(firstMessageContent(messages), /process was killed or timed out/);
   });
 

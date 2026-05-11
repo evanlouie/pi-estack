@@ -110,9 +110,7 @@ function parseMode(value: string, name: string): Mode {
 
 function parsePositiveInteger(value: string, name: string): number {
   if (!/^\d+$/.test(value)) {
-    fail(
-      `${name} must be a positive integer; received ${JSON.stringify(value)}`,
-    );
+    fail(`${name} must be a positive integer; received ${JSON.stringify(value)}`);
   }
   const number = Number(value);
   if (number <= 0) {
@@ -125,13 +123,7 @@ function parseNumberLike(value: string, name: string): number {
   if (value === "Infinity") return Infinity;
   const number = Number(value);
   if (!Number.isFinite(number) || number < 0) {
-    fail(
-      `${name} must be a non-negative number or Infinity; received ${
-        JSON.stringify(
-          value,
-        )
-      }`,
-    );
+    fail(`${name} must be a non-negative number or Infinity; received ${JSON.stringify(value)}`);
   }
   return number;
 }
@@ -143,11 +135,9 @@ function normalizeDelimiter(value: string | undefined): Delimiter {
   if (value === "tab" || value === "\\t" || value === "\t") return "\t";
   if (value === "pipe" || value === "|") return "|";
   fail(
-    `--delimiter must be one of comma, ",", tab, "\\t", pipe, or "|"; received ${
-      JSON.stringify(
-        value,
-      )
-    }`,
+    `--delimiter must be one of comma, ",", tab, "\\t", pipe, or "|"; received ${JSON.stringify(
+      value,
+    )}`,
   );
 }
 
@@ -159,11 +149,9 @@ function parseArgs(argv: string[]): ParsedArgs | "help" {
   const command = argv[0] as Command;
   if (!["encode", "decode", "validate", "roundtrip"].includes(command)) {
     fail(
-      `first argument must be one of encode, decode, validate, roundtrip; received ${
-        JSON.stringify(
-          argv[0],
-        )
-      }`,
+      `first argument must be one of encode, decode, validate, roundtrip; received ${JSON.stringify(
+        argv[0],
+      )}`,
     );
   }
 
@@ -181,12 +169,7 @@ function parseArgs(argv: string[]): ParsedArgs | "help" {
 
     const requireValue = (flag: string): string => {
       const value = argv[++i];
-      if (
-        value == null ||
-        value.startsWith("--") ||
-        value === "-o" ||
-        value === "-h"
-      ) {
+      if (value == null || value.startsWith("--") || value === "-o" || value === "-h") {
         fail(`${flag} requires a value`);
       }
       return value;
@@ -203,10 +186,7 @@ function parseArgs(argv: string[]): ParsedArgs | "help" {
     } else if (arg === "--keyFolding") {
       parsed.keyFolding = parseMode(requireValue(arg), "--keyFolding");
     } else if (arg === "--flattenDepth") {
-      parsed.flattenDepth = parseNumberLike(
-        requireValue(arg),
-        "--flattenDepth",
-      );
+      parsed.flattenDepth = parseNumberLike(requireValue(arg), "--flattenDepth");
     } else if (arg === "--expandPaths") {
       parsed.expandPaths = parseMode(requireValue(arg), "--expandPaths");
     } else if (arg === "--no-strict") {
@@ -262,9 +242,7 @@ async function writeOutput(text: string, outputPath?: string): Promise<void> {
   try {
     await Deno.writeTextFile(outputPath, text);
   } catch (error) {
-    fail(
-      `failed to write ${JSON.stringify(outputPath)}: ${errorMessage(error)}`,
-    );
+    fail(`failed to write ${JSON.stringify(outputPath)}: ${errorMessage(error)}`);
   }
 }
 
@@ -294,10 +272,7 @@ function encodeOptions(args: ParsedArgs): Record<string, unknown> {
   return options;
 }
 
-function decodeOptions(
-  args: ParsedArgs,
-  forRoundtrip = false,
-): Record<string, unknown> {
+function decodeOptions(args: ParsedArgs, forRoundtrip = false): Record<string, unknown> {
   const options: Record<string, unknown> = {
     strict: args.strict,
   };
@@ -312,9 +287,7 @@ function decodeOptions(
 }
 
 function formatJson(value: unknown, compact: boolean): string {
-  const rendered = compact
-    ? JSON.stringify(value)
-    : JSON.stringify(value, null, 2);
+  const rendered = compact ? JSON.stringify(value) : JSON.stringify(value, null, 2);
   return compact ? rendered : `${rendered}\n`;
 }
 
@@ -323,12 +296,8 @@ function validationError(error: unknown): Record<string, unknown> {
   return {
     valid: false,
     error: errorMessage(error),
-    ...(typeof maybeRecord["line"] === "number"
-      ? { line: maybeRecord["line"] }
-      : {}),
-    ...(typeof maybeRecord["source"] === "string"
-      ? { source: maybeRecord["source"] }
-      : {}),
+    ...(typeof maybeRecord["line"] === "number" ? { line: maybeRecord["line"] } : {}),
+    ...(typeof maybeRecord["source"] === "string" ? { source: maybeRecord["source"] } : {}),
   };
 }
 
@@ -374,10 +343,7 @@ async function validateCommand(args: ParsedArgs): Promise<void> {
       args.output,
     );
   } catch (error) {
-    await writeOutput(
-      `${JSON.stringify(validationError(error), null, 2)}\n`,
-      args.output,
-    );
+    await writeOutput(`${JSON.stringify(validationError(error), null, 2)}\n`, args.output);
     Deno.exit(1);
   }
 }

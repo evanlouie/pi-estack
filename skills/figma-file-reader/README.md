@@ -1,12 +1,15 @@
 # figma-file-reader
 
-Agent Skill for efficiently reading and parsing Figma files, Figma URLs, Figma node links, and Figma REST API JSON.
+Agent Skill for efficiently reading and parsing Figma files, Figma URLs, Figma
+node links, and Figma REST API JSON.
 
 ## Contents
 
 - `SKILL.md` — skill frontmatter and usage instructions.
-- `scripts/figma_read.py` — self-contained uv script for URL parsing, API fetching, caching, summaries, node search, and design-token extraction.
-- `references/figma-api-notes.md` — Figma API, auth, endpoint, and rate-limit notes.
+- `scripts/figma_read.py` — self-contained uv script for URL parsing, API
+  fetching, caching, summaries, node search, and design-token extraction.
+- `references/figma-api-notes.md` — Figma API, auth, endpoint, and rate-limit
+  notes.
 - `references/output-contracts.md` — compact response templates.
 - `evals/` — starter eval prompts and a local sample Figma API JSON fixture.
 

@@ -7,7 +7,8 @@ This guidance ONLY applies for code under `./extensions`.
 - `bun` for package management.
 - `bun run lint` for linting/type-checking.
 - Use [neverthrow](https://github.com/supermacro/neverthrow) for error handling.
-- Use [ts-pattern](https://github.com/gvergnaud/ts-pattern) extensively for pattern matching; `if`/`else`/`switch` is **banned**.
+- Use [ts-pattern](https://github.com/gvergnaud/ts-pattern) extensively for
+  pattern matching; `if`/`else`/`switch` is **banned**.
 
 ### Python
 

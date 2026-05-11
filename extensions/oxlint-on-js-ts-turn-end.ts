@@ -47,7 +47,10 @@ function targetPath(event: ToolResultEvent): string | undefined {
     .otherwise(() => undefined);
 }
 
-function isSuccessfulJsTsMutation(event: ToolResultEvent, path: string | undefined): path is string {
+function isSuccessfulJsTsMutation(
+  event: ToolResultEvent,
+  path: string | undefined,
+): path is string {
   return !event.isError && typeof path === "string" && JS_TS_FILE_RE.test(path);
 }
 
@@ -91,7 +94,9 @@ function oxlintFailureReason(result: ExecResult): string {
 function turnEndFailureMessage(paths: PendingOxlintFile[], reason: string): string {
   const files = paths.map(({ displayPath }) => `- ${displayPath}`).join("\n");
   return [
-    `${OXLINT_COMMAND} ${OXLINT_TYPE_CHECK_ARGS.join(" ")} failed after the last turn for ${paths.length} changed JavaScript/TypeScript file(s):`,
+    `${OXLINT_COMMAND} ${OXLINT_TYPE_CHECK_ARGS.join(
+      " ",
+    )} failed after the last turn for ${paths.length} changed JavaScript/TypeScript file(s):`,
     files,
     "",
     reason,
@@ -101,7 +106,9 @@ function turnEndFailureMessage(paths: PendingOxlintFile[], reason: string): stri
 }
 
 function turnEndSuccessMessage(paths: PendingOxlintFile[]): string {
-  return `Ran ${OXLINT_COMMAND} ${OXLINT_TYPE_CHECK_ARGS.join(" ")} on ${paths.length} changed JavaScript/TypeScript file(s)`;
+  return `Ran ${OXLINT_COMMAND} ${OXLINT_TYPE_CHECK_ARGS.join(
+    " ",
+  )} on ${paths.length} changed JavaScript/TypeScript file(s)`;
 }
 
 function recordPendingFile(
@@ -163,7 +170,11 @@ export function createToolResultHandler(
 
 /** @internal exported for focused tests. */
 function notifyTurnEndFailure(ctx: ExtensionContext): void {
-  notify(ctx, `${OXLINT_COMMAND} failed after turn; diagnostics were sent to the agent.`, "warning");
+  notify(
+    ctx,
+    `${OXLINT_COMMAND} failed after turn; diagnostics were sent to the agent.`,
+    "warning",
+  );
 }
 
 function handleOxlintError(
@@ -175,7 +186,11 @@ function handleOxlintError(
   match(ctx.signal?.aborted)
     .with(true, () => undefined)
     .otherwise(() => {
-      sendFailureMessage(pi, paths, missingBinaryReason(OXLINT_COMMAND, error, missingBinaryMessage()));
+      sendFailureMessage(
+        pi,
+        paths,
+        missingBinaryReason(OXLINT_COMMAND, error, missingBinaryMessage()),
+      );
       notifyTurnEndFailure(ctx);
     });
 }

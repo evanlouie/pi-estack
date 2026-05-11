@@ -10,34 +10,52 @@ metadata:
 
 # curl_cffi Skill
 
-Use this skill for tasks involving the `curl_cffi` Python package or the `curl-cffi` command-line tool.
+Use this skill for tasks involving the `curl_cffi` Python package or the
+`curl-cffi` command-line tool.
 
 ## Operating boundaries
 
-Use `curl_cffi` for authorized HTTP/API clients, diagnostics, compatibility testing, and browser-like TLS/HTTP fingerprinting where the user has a legitimate reason to access the target. Do not help use it for credential attacks, spam, unauthorized scraping, evading bans, bypassing paywalls, or defeating access controls. When a request target is user-supplied in server-side code, treat it as SSRF-sensitive.
+Use `curl_cffi` for authorized HTTP/API clients, diagnostics, compatibility
+testing, and browser-like TLS/HTTP fingerprinting where the user has a
+legitimate reason to access the target. Do not help use it for credential
+attacks, spam, unauthorized scraping, evading bans, bypassing paywalls, or
+defeating access controls. When a request target is user-supplied in server-side
+code, treat it as SSRF-sensitive.
 
 ## Default workflow
 
 1. Classify the task:
-   - **Application code**: use the requests-like API from `curl_cffi import requests`.
+   - **Application code**: use the requests-like API from
+     `curl_cffi import requests`.
    - **Repeated requests/cookies/connection reuse**: use `requests.Session`.
    - **Concurrency**: use `AsyncSession`.
-   - **WebSockets**: use `AsyncSession.ws_connect` for async code; use sync WebSocket APIs only when the project is already synchronous.
+   - **WebSockets**: use `AsyncSession.ws_connect` for async code; use sync
+     WebSocket APIs only when the project is already synchronous.
    - **One-off diagnostics or reproductions**: use the `curl-cffi` CLI.
-   - **Unsupported libcurl knobs**: use `curl_options` first; use low-level `Curl` only when the requests-like API cannot express the operation.
+   - **Unsupported libcurl knobs**: use `curl_options` first; use low-level
+     `Curl` only when the requests-like API cannot express the operation.
 2. Check environment assumptions:
    - Require Python 3.10+.
-   - If the package is missing, suggest `pip install curl_cffi --upgrade` or `pip install 'curl_cffi[cli]'` when CLI syntax highlighting/progress bars are useful.
-   - Prefer adding a dependency to the project’s package manager instead of ad hoc installs when editing an existing repository.
+   - If the package is missing, suggest `pip install curl_cffi --upgrade` or
+     `pip install 'curl_cffi[cli]'` when CLI syntax highlighting/progress bars
+     are useful.
+   - Prefer adding a dependency to the project’s package manager instead of ad
+     hoc installs when editing an existing repository.
 3. Choose safe defaults:
    - Use `timeout=` on network calls.
-   - Use `with requests.Session(...) as s:` or `async with AsyncSession(...) as s:`.
-   - For server-side user-supplied URLs, set `allow_redirects=CurlFollow.SAFE` or `allow_redirects="safe"`.
-   - Keep TLS verification enabled unless the user is explicitly debugging a local MITM proxy or test certificate.
+   - Use `with requests.Session(...) as s:` or
+     `async with AsyncSession(...) as s:`.
+   - For server-side user-supplied URLs, set `allow_redirects=CurlFollow.SAFE`
+     or `allow_redirects="safe"`.
+   - Keep TLS verification enabled unless the user is explicitly debugging a
+     local MITM proxy or test certificate.
 4. Validate the result:
    - Run unit tests or a small smoke request against a user-approved target.
-   - For code generation, handle `curl_cffi.requests.exceptions.RequestException`/`HTTPError`/`Timeout` for the requests-like API; handle `CurlError` for low-level `Curl` code.
-   - For CLI diagnostics, capture headers/status and show the exact command used.
+   - For code generation, handle
+     `curl_cffi.requests.exceptions.RequestException`/`HTTPError`/`Timeout` for
+     the requests-like API; handle `CurlError` for low-level `Curl` code.
+   - For CLI diagnostics, capture headers/status and show the exact command
+     used.
 
 ## Core code patterns
 
@@ -86,7 +104,8 @@ async def fetch_all(urls: list[str]) -> list[str]:
 
 ### Multipart upload
 
-Do not use the `requests` package’s `files=` pattern. Use `CurlMime`; pass ordinary multipart form fields through `data=`:
+Do not use the `requests` package’s `files=` pattern. Use `CurlMime`; pass
+ordinary multipart form fields through `data=`:
 
 ```python
 from curl_cffi import CurlMime, requests
@@ -138,16 +157,41 @@ curl-cffi doctor
 
 ## Reference lookup
 
-- Read `references/python-api.md` when the task involves writing or reviewing Python `curl_cffi` code — requests-like calls, `Session`/`AsyncSession`, WebSockets, `CurlMime`/multipart uploads, streaming, proxies, HTTP version selection, `RetryStrategy`, or low-level `Curl`/`curl_options`/`CurlOpt` usage.
-- Read `references/impersonation-and-cli.md` when the task involves choosing or pinning an `impersonate=` target, managing default browser headers, supplying `ja3`/`akamai`/`extra_fp` custom fingerprints, upgrading bundled fingerprints, or writing/debugging `curl-cffi` CLI commands (including `run` for `.http`/`.har` files and `doctor`).
-- Read `references/security-and-troubleshooting.md` when the task involves user-supplied URLs or SSRF concerns, `CurlFollow.SAFE`/redirect handling, TLS verification errors, cookie persistence, proxy failures, HTTP/2 `PROTOCOL_ERROR` debugging, response encoding overrides, PyInstaller packaging, or production hardening review.
+- Read `references/python-api.md` when the task involves writing or reviewing
+  Python `curl_cffi` code — requests-like calls, `Session`/`AsyncSession`,
+  WebSockets, `CurlMime`/multipart uploads, streaming, proxies, HTTP version
+  selection, `RetryStrategy`, or low-level `Curl`/`curl_options`/`CurlOpt`
+  usage.
+- Read `references/impersonation-and-cli.md` when the task involves choosing or
+  pinning an `impersonate=` target, managing default browser headers, supplying
+  `ja3`/`akamai`/`extra_fp` custom fingerprints, upgrading bundled fingerprints,
+  or writing/debugging `curl-cffi` CLI commands (including `run` for
+  `.http`/`.har` files and `doctor`).
+- Read `references/security-and-troubleshooting.md` when the task involves
+  user-supplied URLs or SSRF concerns, `CurlFollow.SAFE`/redirect handling, TLS
+  verification errors, cookie persistence, proxy failures, HTTP/2
+  `PROTOCOL_ERROR` debugging, response encoding overrides, PyInstaller
+  packaging, or production hardening review.
 
 ## Gotchas
 
-- `impersonate="chrome"` adds browser-like default headers. Override individual headers with `headers=...`, or disable them with `default_headers=False` and pass explicit headers when exact header content/order matters.
-- `files=` is not supported in the requests-like API; use `CurlMime` and `multipart=`.
-- For multiple requests, prefer `Session` so cookies and connections are reused. `response.cookies` only covers the current response; use `session.cookies` for accumulated cookies.
-- `stream=True` is compatible with iterative APIs, but the response begins streaming immediately; consume it immediately or use `content_callback` to avoid memory growth.
-- Use `proxy="http://user:pass@host:port"` for a single proxy. For HTTPS destinations, the proxy URL often still starts with `http://`; do not assume it should be `https://`.
-- If HTTP/2 fails with `PROTOCOL_ERROR`, try removing a manual `Content-Length`, testing without proxies, and forcing HTTP/1.1 with `http_version="v1"` or `CurlHttpVersion.V1_1`.
-- `curl_cffi` can mimic TLS/HTTP fingerprints, but it does not run JavaScript, solve CAPTCHAs, change browser DOM fingerprints, or guarantee access through anti-bot systems.
+- `impersonate="chrome"` adds browser-like default headers. Override individual
+  headers with `headers=...`, or disable them with `default_headers=False` and
+  pass explicit headers when exact header content/order matters.
+- `files=` is not supported in the requests-like API; use `CurlMime` and
+  `multipart=`.
+- For multiple requests, prefer `Session` so cookies and connections are reused.
+  `response.cookies` only covers the current response; use `session.cookies` for
+  accumulated cookies.
+- `stream=True` is compatible with iterative APIs, but the response begins
+  streaming immediately; consume it immediately or use `content_callback` to
+  avoid memory growth.
+- Use `proxy="http://user:pass@host:port"` for a single proxy. For HTTPS
+  destinations, the proxy URL often still starts with `http://`; do not assume
+  it should be `https://`.
+- If HTTP/2 fails with `PROTOCOL_ERROR`, try removing a manual `Content-Length`,
+  testing without proxies, and forcing HTTP/1.1 with `http_version="v1"` or
+  `CurlHttpVersion.V1_1`.
+- `curl_cffi` can mimic TLS/HTTP fingerprints, but it does not run JavaScript,
+  solve CAPTCHAs, change browser DOM fingerprints, or guarantee access through
+  anti-bot systems.

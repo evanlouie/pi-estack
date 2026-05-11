@@ -1,13 +1,35 @@
 {
   "name": "pi-estack",
+  "keywords": [
+    "pi-package"
+  ],
   "type": "module",
   "scripts": {
     "lint": "oxlint --type-aware --type-check",
     "lint:fix": "oxlint --type-aware --type-check --fix",
     "test": "bun test"
   },
-  "keywords": [
-    "pi-package"
+  "dependencies": {
+    "neverthrow": "^8.2.0",
+    "oxlint": "^1.63.0",
+    "oxlint-tsgolint": "^0.22.1",
+    "ts-pattern": "^5.9.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.74.0",
+    "@types/deno": "^2.5.0",
+    "@types/node": "^25.6.2",
+    "@typescript/native-preview": "^7.0.0-dev.20260510.1",
+    "oxfmt": "^0.48.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": ">=0.74.0"
+  },
+  "bundledDependencies": [
+    "pi-interactive-shell",
+    "pi-intercom",
+    "pi-mcp-adapter",
+    "pi-subagents"
   ],
   "pi": {
     "extensions": [
@@ -22,27 +44,5 @@
     "themes": [
       "./themes"
     ]
-  },
-  "dependencies": {
-    "neverthrow": "^8.2.0",
-    "oxlint": "^1.63.0",
-    "oxlint-tsgolint": "^0.22.1",
-    "ts-pattern": "^5.9.0"
-  },
-  "peerDependencies": {
-    "@earendil-works/pi-coding-agent": ">=0.74.0"
-  },
-  "devDependencies": {
-    "@earendil-works/pi-coding-agent": "^0.74.0",
-    "@types/deno": "^2.5.0",
-    "@types/node": "^25.6.2",
-    "@typescript/native-preview": "^7.0.0-dev.20260510.1",
-    "oxfmt": "^0.48.0"
-  },
-  "bundledDependencies": [
-    "pi-mcp-adapter",
-    "pi-subagents",
-    "pi-intercom",
-    "pi-interactive-shell"
-  ]
+  }
 }

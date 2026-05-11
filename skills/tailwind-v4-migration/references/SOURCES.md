@@ -1,6 +1,7 @@
 # Source notes
 
-This skill was built from the Agent Skills specification and creator guidance, plus Tailwind CSS official v4 migration documentation.
+This skill was built from the Agent Skills specification and creator guidance,
+plus Tailwind CSS official v4 migration documentation.
 
 ## Agent Skills documentation reviewed
 
@@ -19,4 +20,5 @@ This skill was built from the Agent Skills specification and creator guidance, p
 - https://tailwindcss.com/docs/detecting-classes-in-source-files
 - https://tailwindcss.com/docs/adding-custom-styles
 
-Check the live official docs before updating this skill for future Tailwind releases.
+Check the live official docs before updating this skill for future Tailwind
+releases.

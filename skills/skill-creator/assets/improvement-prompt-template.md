@@ -1,6 +1,7 @@
 # Skill Improvement Prompt Template
 
-Use this template when asking a model or reviewer to propose skill improvements from eval evidence.
+Use this template when asking a model or reviewer to propose skill improvements
+from eval evidence.
 
 ```text
 You are improving an Agent Skill. Generalize from the evidence; do not overfit to exact test prompts. Keep the skill lean, preserve useful specificity, and explain changes that affect behavior.

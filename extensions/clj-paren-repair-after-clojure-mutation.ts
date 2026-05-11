@@ -112,9 +112,7 @@ export function createToolResultHandler(
             isError: false,
             toolName: P.when((toolName) => MUTATING_TOOLS.has(toolName)),
           },
-          path: P.when(
-            (path): path is string => typeof path === "string" && isClojurePath(path),
-          ),
+          path: P.when((path): path is string => typeof path === "string" && isClojurePath(path)),
         },
         ({ event, path }) => {
           const absolutePath = resolveToCwd(path, ctx.cwd);

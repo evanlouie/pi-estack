@@ -167,9 +167,7 @@ const shouldWrite = writeRequested && !dryRun;
 const maxFileSize = numberArg(args, "max-file-size", 1_000_000, 0);
 
 if (!isDirectory(projectRoot)) {
-  console.error(
-    `Error: --project must point to an existing directory. Received: ${projectRoot}`,
-  );
+  console.error(`Error: --project must point to an existing directory. Received: ${projectRoot}`);
   Deno.exit(2);
 }
 
@@ -232,11 +230,7 @@ function hasFlag(parsedArgs: ParsedArgs, key: string): boolean {
   return parsedArgs[key] === true;
 }
 
-function stringArg(
-  parsedArgs: ParsedArgs,
-  key: string,
-  defaultValue: string,
-): string {
+function stringArg(parsedArgs: ParsedArgs, key: string, defaultValue: string): string {
   const value = parsedArgs[key];
   if (value === undefined) return defaultValue;
   if (typeof value !== "string") {
@@ -342,30 +336,24 @@ function transformFile(text: string): TransformResult {
   let cursor = 0;
   for (const range of ranges) {
     updated += text.slice(cursor, range.start);
-    updated += transformSegment(
-      text.slice(range.start, range.end),
-      range.start,
-    );
+    updated += transformSegment(text.slice(range.start, range.end), range.start);
     cursor = range.end;
   }
   updated += text.slice(cursor);
   return { updated, changes };
 
   function transformSegment(segment: string, baseOffset: number): string {
-    return segment.replace(
-      TOKEN_RE,
-      (token: string, offset: number): string => {
-        const next = transformToken(token);
-        if (next !== token) {
-          changes.push({
-            from: token,
-            to: next,
-            line: lineAt(text, baseOffset + offset),
-          });
-        }
-        return next;
-      },
-    );
+    return segment.replace(TOKEN_RE, (token: string, offset: number): string => {
+      const next = transformToken(token);
+      if (next !== token) {
+        changes.push({
+          from: token,
+          to: next,
+          line: lineAt(text, baseOffset + offset),
+        });
+      }
+      return next;
+    });
   }
 }
 
@@ -468,14 +456,8 @@ function transformToken(token: string): string {
   //   bg-[--brand-color]      -> bg-(--brand-color)
   //   bg-[var(--brand-color)] -> bg-(--brand-color)
   // Applies to any utility prefix (bg-, text-, border-, fill-, ring-, ...).
-  transformed = transformed.replace(
-    /(^|:)([A-Za-z0-9_/-]+)-\[var\((--[^)\s]+)\)\]/g,
-    "$1$2-($3)",
-  );
-  transformed = transformed.replace(
-    /(^|:)([A-Za-z0-9_/-]+)-\[(--[^\]\s]+)\]/g,
-    "$1$2-($3)",
-  );
+  transformed = transformed.replace(/(^|:)([A-Za-z0-9_/-]+)-\[var\((--[^)\s]+)\)\]/g, "$1$2-($3)");
+  transformed = transformed.replace(/(^|:)([A-Za-z0-9_/-]+)-\[(--[^\]\s]+)\]/g, "$1$2-($3)");
 
   // v4 important modifier: hover:!bg-red-500 -> hover:bg-red-500!
   transformed = moveImportantMarker(transformed);
@@ -537,18 +519,12 @@ function lineAt(text: string, offset: number): number {
 }
 
 function printReport(report: Report): void {
-  console.log(
-    `# Tailwind v4 deterministic rename ${
-      report.dryRun ? "dry run" : "write run"
-    }`,
-  );
+  console.log(`# Tailwind v4 deterministic rename ${report.dryRun ? "dry run" : "write run"}`);
   console.log("");
   console.log(`Project: ${report.projectRoot}`);
   console.log(`Files scanned: ${report.filesScanned}`);
   console.log(
-    `Token changes ${
-      report.dryRun ? "that would be made" : "made"
-    }: ${report.totalChanges}`,
+    `Token changes ${report.dryRun ? "that would be made" : "made"}: ${report.totalChanges}`,
   );
   console.log("");
   if (report.totalChanges === 0) {
@@ -559,16 +535,10 @@ function printReport(report: Report): void {
     console.log(`## ${fileReport.file}`);
     const shown = fileReport.changes.slice(0, 50);
     for (const change of shown) {
-      console.log(
-        `- line ${change.line}: \`${change.from}\` → \`${change.to}\``,
-      );
+      console.log(`- line ${change.line}: \`${change.from}\` → \`${change.to}\``);
     }
     if (fileReport.changes.length > shown.length) {
-      console.log(
-        `- ...and ${
-          fileReport.changes.length - shown.length
-        } more in this file.`,
-      );
+      console.log(`- ...and ${fileReport.changes.length - shown.length} more in this file.`);
     }
     console.log("");
   }
@@ -577,9 +547,7 @@ function printReport(report: Report): void {
       "Run again with --write to apply these changes. Review the project with git diff afterward.",
     );
   } else {
-    console.log(
-      "Changes written. Review with git diff and run the project build.",
-    );
+    console.log("Changes written. Review with git diff and run the project build.");
   }
 }
 

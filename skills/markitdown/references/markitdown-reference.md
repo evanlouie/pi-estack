@@ -2,7 +2,11 @@
 
 ## Purpose
 
-MarkItDown converts files and selected URLs into Markdown for LLM workflows, indexing, and text analysis. The output should preserve useful document structure such as headings, lists, links, and tables when the source converter can extract them. It is not intended to be a high-fidelity page-layout converter.
+MarkItDown converts files and selected URLs into Markdown for LLM workflows,
+indexing, and text analysis. The output should preserve useful document
+structure such as headings, lists, links, and tables when the source converter
+can extract them. It is not intended to be a high-fidelity page-layout
+converter.
 
 ## Supported source types
 
@@ -20,7 +24,8 @@ Commonly supported sources include:
 - YouTube URLs
 - EPubs
 
-Exact behavior depends on the installed MarkItDown version, optional dependencies, plugins, and available credentials.
+Exact behavior depends on the installed MarkItDown version, optional
+dependencies, plugins, and available credentials.
 
 ## Installation patterns
 
@@ -76,18 +81,24 @@ Use the narrowest method for the task:
 
 - `convert_local(path)` for local files.
 - `convert_stream(stream, ...)` for controlled byte streams.
-- `convert_response(response, ...)` after making a validated `requests` call yourself.
-- Avoid the broad `convert(source)` method in security-sensitive contexts because it can accept local paths, URLs, responses, and streams.
+- `convert_response(response, ...)` after making a validated `requests` call
+  yourself.
+- Avoid the broad `convert(source)` method in security-sensitive contexts
+  because it can accept local paths, URLs, responses, and streams.
 
 ## Security guidance
 
-MarkItDown performs I/O with the privileges of the current process. In hosted or untrusted environments:
+MarkItDown performs I/O with the privileges of the current process. In hosted or
+untrusted environments:
 
 - Validate paths and only pass files the user is allowed to read.
-- Avoid broad URL conversion. Validate URL schemes, hosts, redirects, and maximum size before fetching.
-- Block private, loopback, link-local, metadata-service, and other non-public addresses.
+- Avoid broad URL conversion. Validate URL schemes, hosts, redirects, and
+  maximum size before fetching.
+- Block private, loopback, link-local, metadata-service, and other non-public
+  addresses.
 - Keep plugins disabled unless the user explicitly requested a trusted plugin.
-- Do not send documents to Azure Document Intelligence or an LLM provider without explicit user approval.
+- Do not send documents to Azure Document Intelligence or an LLM provider
+  without explicit user approval.
 
 ## Quality checks after conversion
 
@@ -98,15 +109,16 @@ After writing Markdown, inspect:
 3. For spreadsheets, tabs/sheets appear in a readable sequence.
 4. For PDFs, output is not just page headers/footers or blank text.
 5. For ZIP files, contents are clearly separated.
-6. For image-only/scanned documents, report that OCR or Document Intelligence may be required.
+6. For image-only/scanned documents, report that OCR or Document Intelligence
+   may be required.
 
 ## Troubleshooting matrix
 
-| Symptom | Likely cause | Next step |
-|---|---|---|
-| Empty PDF output | Scanned/image-only PDF | Ask whether to use OCR, Azure Document Intelligence, or a trusted OCR plugin |
-| Incorrect source type | Missing/ambiguous extension | Retry with `--extension` and `--mime-type` |
-| Garbled text | Charset issue | Retry with `--charset UTF-8` or source-specific encoding |
-| Tables missing | Source PDF flattened table structure | Convert the original spreadsheet/CSV if available |
-| Plugin output missing | Plugins disabled or not installed | Run `markitdown --list-plugins`; retry with `--use-plugins` only if trusted |
-| Remote URL blocked | Safety validation rejected URL or redirect | Download only if the URL is trusted and public, then convert the local file |
+| Symptom               | Likely cause                               | Next step                                                                    |
+| --------------------- | ------------------------------------------ | ---------------------------------------------------------------------------- |
+| Empty PDF output      | Scanned/image-only PDF                     | Ask whether to use OCR, Azure Document Intelligence, or a trusted OCR plugin |
+| Incorrect source type | Missing/ambiguous extension                | Retry with `--extension` and `--mime-type`                                   |
+| Garbled text          | Charset issue                              | Retry with `--charset UTF-8` or source-specific encoding                     |
+| Tables missing        | Source PDF flattened table structure       | Convert the original spreadsheet/CSV if available                            |
+| Plugin output missing | Plugins disabled or not installed          | Run `markitdown --list-plugins`; retry with `--use-plugins` only if trusted  |
+| Remote URL blocked    | Safety validation rejected URL or redirect | Download only if the URL is trusted and public, then convert the local file  |

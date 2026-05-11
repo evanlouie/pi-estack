@@ -141,7 +141,11 @@ function turnEndEvent(): TurnEndEvent {
   return {
     type: "turn_end",
     turnIndex: 1,
-    message: { role: "assistant", content: [], timestamp: Date.now() } as unknown as TurnEndEvent["message"],
+    message: {
+      role: "assistant",
+      content: [],
+      timestamp: Date.now(),
+    } as unknown as TurnEndEvent["message"],
     toolResults: [],
   };
 }
@@ -278,7 +282,10 @@ void describe("oxlint on JavaScript/TypeScript turn end extension", () => {
     const cwd = await withOxlintOnPath();
     const pendingFiles: PendingOxlintFiles = new Map();
     const { pi, calls } = createMockPi();
-    await createToolResultHandler(pendingFiles)(writeEvent("src/main.ts", true), createContext(cwd));
+    await createToolResultHandler(pendingFiles)(
+      writeEvent("src/main.ts", true),
+      createContext(cwd),
+    );
     await createTurnEndHandler(pi, pendingFiles)(turnEndEvent(), createContext(cwd));
 
     assert.equal(calls.length, 0);
@@ -310,7 +317,10 @@ void describe("oxlint on JavaScript/TypeScript turn end extension", () => {
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0]?.args, expectedOxlintArgs(join(cwd, "src/main.ts")));
     assert.equal(messages.length, 1);
-    assert.deepEqual(messages[0]?.options, { deliverAs: "steer", triggerTurn: true });
+    assert.deepEqual(messages[0]?.options, {
+      deliverAs: "steer",
+      triggerTurn: true,
+    });
     assert.equal(messages[0]?.message.customType, "oxlint-turn-end");
     assert.equal(messages[0]?.message.display, true);
     assert.match(firstMessageContent(messages), /oxlint --type-aware --type-check failed/);

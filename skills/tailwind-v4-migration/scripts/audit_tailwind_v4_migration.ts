@@ -61,18 +61,9 @@ type AuditOutput = {
   findings: Finding[];
 };
 
-type RemovedUtilityPattern = readonly [
-  label: string,
-  regex: RegExp,
-  recommendation: string,
-];
+type RemovedUtilityPattern = readonly [label: string, regex: RegExp, recommendation: string];
 
-type TextCheck = readonly [
-  rule: string,
-  regex: RegExp,
-  message: string,
-  recommendation: string,
-];
+type TextCheck = readonly [rule: string, regex: RegExp, message: string, recommendation: string];
 
 const DEFAULT_EXCLUDED_DIRS = new Set([
   ".git",
@@ -163,11 +154,7 @@ const CLASS_RENAMES: ReadonlyArray<readonly [from: string, to: string]> = [
 ];
 
 const REMOVED_UTILITY_PATTERNS: ReadonlyArray<RemovedUtilityPattern> = [
-  [
-    "bg-opacity-*",
-    /(?:^|[^\w-])bg-opacity-\d+\b/g,
-    "Use opacity modifiers like bg-black/50.",
-  ],
+  ["bg-opacity-*", /(?:^|[^\w-])bg-opacity-\d+\b/g, "Use opacity modifiers like bg-black/50."],
   [
     "text-opacity-*",
     /(?:^|[^\w-])text-opacity-\d+\b/g,
@@ -193,27 +180,11 @@ const REMOVED_UTILITY_PATTERNS: ReadonlyArray<RemovedUtilityPattern> = [
     /(?:^|[^\w-])placeholder-opacity-\d+\b/g,
     "Use opacity modifiers like placeholder-black/50.",
   ],
-  [
-    "flex-shrink-*",
-    /(?:^|[^\w-])flex-shrink(?:-\d+)?\b/g,
-    "Use shrink-* utilities.",
-  ],
+  ["flex-shrink-*", /(?:^|[^\w-])flex-shrink(?:-\d+)?\b/g, "Use shrink-* utilities."],
   ["flex-grow-*", /(?:^|[^\w-])flex-grow(?:-\d+)?\b/g, "Use grow-* utilities."],
-  [
-    "overflow-ellipsis",
-    /(?:^|[^\w-])overflow-ellipsis\b/g,
-    "Use text-ellipsis.",
-  ],
-  [
-    "decoration-slice",
-    /(?:^|[^\w-])decoration-slice\b/g,
-    "Use box-decoration-slice.",
-  ],
-  [
-    "decoration-clone",
-    /(?:^|[^\w-])decoration-clone\b/g,
-    "Use box-decoration-clone.",
-  ],
+  ["overflow-ellipsis", /(?:^|[^\w-])overflow-ellipsis\b/g, "Use text-ellipsis."],
+  ["decoration-slice", /(?:^|[^\w-])decoration-slice\b/g, "Use box-decoration-slice."],
+  ["decoration-clone", /(?:^|[^\w-])decoration-clone\b/g, "Use box-decoration-clone."],
 ];
 
 const args = parseArgs(Deno.args);
@@ -229,9 +200,7 @@ const maxFileSize = numberArg(args, "max-file-size", 1_000_000, 0);
 const maxSamples = numberArg(args, "max-samples", 12, 1);
 
 if (!isDirectory(projectRoot)) {
-  console.error(
-    `Error: --project must point to an existing directory. Received: ${projectRoot}`,
-  );
+  console.error(`Error: --project must point to an existing directory. Received: ${projectRoot}`);
   Deno.exit(2);
 }
 
@@ -324,11 +293,7 @@ function hasFlag(parsedArgs: ParsedArgs, key: string): boolean {
   return parsedArgs[key] === true;
 }
 
-function stringArg(
-  parsedArgs: ParsedArgs,
-  key: string,
-  defaultValue: string,
-): string {
+function stringArg(parsedArgs: ParsedArgs, key: string, defaultValue: string): string {
   const value = parsedArgs[key];
   if (value === undefined) return defaultValue;
   if (typeof value !== "string") {
@@ -520,10 +485,7 @@ function analyzePackageJson(rel: string, text: string): void {
       "For Vite projects, prefer @tailwindcss/vite for v4.",
     );
   }
-  if (
-    (deps["postcss"] || hasPostCssConfig(projectRoot)) &&
-    !deps["@tailwindcss/postcss"]
-  ) {
+  if ((deps["postcss"] || hasPostCssConfig(projectRoot)) && !deps["@tailwindcss/postcss"]) {
     addFinding(
       "review",
       "postcss-plugin-missing",
@@ -696,10 +658,7 @@ function analyzeCssLike(rel: string, text: string, ext: string): void {
   }
   if (
     /@apply\b/.test(text) &&
-    /\.(vue|svelte|astro|module\.css|module\.scss|module\.sass|module\.less)$/
-      .test(
-        rel,
-      )
+    /\.(vue|svelte|astro|module\.css|module\.scss|module\.sass|module\.less)$/.test(rel)
   ) {
     addFinding(
       "action",
@@ -877,9 +836,7 @@ function classTokenRegex(token: string): RegExp {
   // Matches a class token base after optional variants and optional leading important marker.
   const escaped = escapeRegExp(token);
   return new RegExp(
-    "(?:^|[\\s\"'=])(?:[A-Za-z0-9_@.-]+:)*!?" +
-      escaped +
-      "(?:!)?(?=$|[\\s\"'=])",
+    "(?:^|[\\s\"'=])(?:[A-Za-z0-9_@.-]+:)*!?" + escaped + "(?:!)?(?=$|[\\s\"'=])",
     "m",
   );
 }
@@ -921,10 +878,7 @@ function addFinding(
   findings.push({ severity, rule, file, line, message, recommendation });
 }
 
-function countBy(
-  items: Finding[],
-  key: "severity" | "rule",
-): Record<string, number> {
+function countBy(items: Finding[], key: "severity" | "rule"): Record<string, number> {
   const out: Record<string, number> = {};
   for (const item of items) out[item[key]] = (out[item[key]] ?? 0) + 1;
   return out;
@@ -939,9 +893,7 @@ function renderMarkdown(output: AuditOutput, maxSamples: number): string {
   lines.push(`Project: \`${stats.projectRoot}\``);
   lines.push(`Scanned files: ${stats.scannedFiles}`);
   lines.push(`Package manager: ${stats.packageManager}`);
-  lines.push(
-    `Tailwind config present: ${stats.hasTailwindConfig ? "yes" : "no"}`,
-  );
+  lines.push(`Tailwind config present: ${stats.hasTailwindConfig ? "yes" : "no"}`);
   lines.push("");
   lines.push("## Summary");
   lines.push("");
@@ -957,24 +909,17 @@ function renderMarkdown(output: AuditOutput, maxSamples: number): string {
   }
   lines.push("## Findings by rule");
   lines.push("");
-  for (
-    const [rule, count] of Object.entries(countsByRule).sort(
-      (a, b) => b[1] - a[1],
-    )
-  ) {
+  for (const [rule, count] of Object.entries(countsByRule).sort((a, b) => b[1] - a[1])) {
     lines.push(`- ${rule}: ${count}`);
   }
   lines.push("");
   lines.push("## Details");
   lines.push("");
   const grouped = groupBy(findings, "rule");
-  for (
-    const [rule, group] of Object.entries(grouped).sort(
-      (a, b) =>
-        severityRank(b[1][0]?.severity) - severityRank(a[1][0]?.severity) ||
-        a[0].localeCompare(b[0]),
-    )
-  ) {
+  for (const [rule, group] of Object.entries(grouped).sort(
+    (a, b) =>
+      severityRank(b[1][0]?.severity) - severityRank(a[1][0]?.severity) || a[0].localeCompare(b[0]),
+  )) {
     const first = group[0];
     if (!first) continue;
     lines.push(`### ${rule} (${group.length})`);
@@ -993,10 +938,7 @@ function renderMarkdown(output: AuditOutput, maxSamples: number): string {
   return lines.join("\n");
 }
 
-function groupBy(
-  items: Finding[],
-  key: "severity" | "rule",
-): Record<string, Finding[]> {
+function groupBy(items: Finding[], key: "severity" | "rule"): Record<string, Finding[]> {
   const out: Record<string, Finding[]> = {};
   for (const item of items) {
     (out[item[key]] ??= []).push(item);

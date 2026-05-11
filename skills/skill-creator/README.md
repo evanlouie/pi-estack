@@ -1,6 +1,7 @@
 # skill-creator
 
-Agent Skill for creating, writing, revising, validating, packaging, and evaluating Agent Skills.
+Agent Skill for creating, writing, revising, validating, packaging, and
+evaluating Agent Skills.
 
 ## Install
 
@@ -10,7 +11,8 @@ Copy the `skill-creator/` directory into a skills directory such as:
 .agents/skills/skill-creator/
 ```
 
-Then confirm your client discovers the skill. In clients that support a `/skills` command, use that command after reloading the project/session.
+Then confirm your client discovers the skill. In clients that support a
+`/skills` command, use that command after reloading the project/session.
 
 ## Use
 

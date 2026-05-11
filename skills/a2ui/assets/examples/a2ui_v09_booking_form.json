@@ -20,7 +20,13 @@
         {
           "id": "form-layout",
           "component": "Column",
-          "children": ["title", "party-size-field", "time-field", "newsletter-checkbox", "actions-row"],
+          "children": [
+            "title",
+            "party-size-field",
+            "time-field",
+            "newsletter-checkbox",
+            "actions-row"
+          ],
           "justify": "start",
           "align": "stretch"
         },
@@ -34,13 +40,13 @@
           "id": "party-size-field",
           "component": "TextField",
           "label": "Party size",
-          "value": {"path": "/reservation/partySize"},
+          "value": { "path": "/reservation/partySize" },
           "variant": "number"
         },
         {
           "id": "time-field",
           "component": "DateTimeInput",
-          "value": {"path": "/reservation/time"},
+          "value": { "path": "/reservation/time" },
           "enableDate": true,
           "enableTime": true
         },
@@ -48,7 +54,7 @@
           "id": "newsletter-checkbox",
           "component": "CheckBox",
           "label": "Send me restaurant updates",
-          "value": {"path": "/preferences/newsletter"}
+          "value": { "path": "/preferences/newsletter" }
         },
         {
           "id": "actions-row",
@@ -70,7 +76,7 @@
           "action": {
             "event": {
               "name": "cancel_reservation",
-              "context": {"source": "booking-form"}
+              "context": { "source": "booking-form" }
             }
           }
         },
@@ -88,8 +94,8 @@
             "event": {
               "name": "confirm_reservation",
               "context": {
-                "reservation": {"path": "/reservation"},
-                "newsletter": {"path": "/preferences/newsletter"}
+                "reservation": { "path": "/reservation" },
+                "newsletter": { "path": "/preferences/newsletter" }
               }
             }
           }

@@ -71,7 +71,9 @@ function ruffFailureReason(result: ExecResult): string {
 function turnEndFailureMessage(paths: PendingRuffFile[], reason: string): string {
   const files = paths.map(({ displayPath }) => `- ${displayPath}`).join("\n");
   return [
-    `${RUFF_COMMAND} ${RUFF_CHECK_ARGS.join(" ")} failed after the last turn for ${paths.length} changed Python file(s):`,
+    `${RUFF_COMMAND} ${RUFF_CHECK_ARGS.join(
+      " ",
+    )} failed after the last turn for ${paths.length} changed Python file(s):`,
     files,
     "",
     reason,
@@ -81,7 +83,9 @@ function turnEndFailureMessage(paths: PendingRuffFile[], reason: string): string
 }
 
 function turnEndSuccessMessage(paths: PendingRuffFile[]): string {
-  return `Ran ${RUFF_COMMAND} ${RUFF_CHECK_ARGS.join(" ")} on ${paths.length} changed Python file(s)`;
+  return `Ran ${RUFF_COMMAND} ${RUFF_CHECK_ARGS.join(
+    " ",
+  )} on ${paths.length} changed Python file(s)`;
 }
 
 function pythonVirtualEnvBinDirectories(cwd: string): string[] {
@@ -165,7 +169,11 @@ function handleRuffError(
   match(ctx.signal?.aborted)
     .with(true, () => undefined)
     .otherwise(() => {
-      sendFailureMessage(pi, paths, missingBinaryReason(RUFF_COMMAND, error, missingBinaryMessage()));
+      sendFailureMessage(
+        pi,
+        paths,
+        missingBinaryReason(RUFF_COMMAND, error, missingBinaryMessage()),
+      );
       notifyTurnEndFailure(ctx);
     });
 }

@@ -37,11 +37,7 @@
         "items": {
           "type": "array",
           "items": {
-            "anyOf": [
-              { "type": "string" },
-              { "$ref": "#/$defs/component" },
-              { "type": "object" }
-            ]
+            "anyOf": [{ "type": "string" }, { "$ref": "#/$defs/component" }, { "type": "object" }]
           }
         },
         "fields": {

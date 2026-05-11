@@ -1,6 +1,7 @@
 # markitdown Agent Skill
 
-Portable Agent Skill for converting documents and trusted public URLs to Markdown with Microsoft MarkItDown.
+Portable Agent Skill for converting documents and trusted public URLs to
+Markdown with Microsoft MarkItDown.
 
 ## Install
 
@@ -11,7 +12,8 @@ mkdir -p .agents/skills
 cp -R markitdown .agents/skills/markitdown
 ```
 
-The required skill file is `SKILL.md`. The helper script is self-contained and runs with uv:
+The required skill file is `SKILL.md`. The helper script is self-contained and
+runs with uv:
 
 ```bash
 uv run .agents/skills/markitdown/scripts/convert_to_markdown.py ./file.pdf --output-dir ./converted --json

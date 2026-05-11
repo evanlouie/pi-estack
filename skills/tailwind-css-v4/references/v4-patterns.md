@@ -58,7 +58,9 @@ Avoid old v3 directives in new v4 work:
 
 ## Theme variables
 
-Use `@theme` for design tokens that should generate Tailwind utilities or variants. Use ordinary CSS variables such as `:root` for variables that should not create utility classes.
+Use `@theme` for design tokens that should generate Tailwind utilities or
+variants. Use ordinary CSS variables such as `:root` for variables that should
+not create utility classes.
 
 ```css
 @import "tailwindcss";
@@ -73,11 +75,16 @@ Use `@theme` for design tokens that should generate Tailwind utilities or varian
 }
 ```
 
-Typical namespaces include `--color-*`, `--font-*`, `--text-*`, `--font-weight-*`, `--tracking-*`, `--leading-*`, `--breakpoint-*`, `--spacing`, `--radius-*`, `--shadow-*`, `--ease-*`, `--animate-*`, and container-related namespaces.
+Typical namespaces include `--color-*`, `--font-*`, `--text-*`,
+`--font-weight-*`, `--tracking-*`, `--leading-*`, `--breakpoint-*`, `--spacing`,
+`--radius-*`, `--shadow-*`, `--ease-*`, `--animate-*`, and container-related
+namespaces.
 
 ## Source detection
 
-Tailwind v4 automatically scans source files and ignores common build/dependency paths. Use `@source` when automatic detection misses files or when working in monorepos.
+Tailwind v4 automatically scans source files and ignores common build/dependency
+paths. Use `@source` when automatic detection misses files or when working in
+monorepos.
 
 ```css
 @import "tailwindcss" source("../src");
@@ -102,7 +109,8 @@ Safelist generated utilities with `@source inline()`:
 
 ## Custom utilities
 
-Use `@utility` instead of relying on `@layer utilities` for variant-aware custom utilities.
+Use `@utility` instead of relying on `@layer utilities` for variant-aware custom
+utilities.
 
 ```css
 @utility content-auto {
@@ -119,7 +127,8 @@ Use `@utility` instead of relying on `@layer utilities` for variant-aware custom
 
 ## Variants
 
-Use `@custom-variant` to define a reusable variant and `@variant` to apply a Tailwind variant inside CSS.
+Use `@custom-variant` to define a reusable variant and `@variant` to apply a
+Tailwind variant inside CSS.
 
 ```css
 @custom-variant dark (&:where(.dark, .dark *));
@@ -133,11 +142,14 @@ Use `@custom-variant` to define a reusable variant and `@variant` to apply a Tai
 }
 ```
 
-Use only `@variant` syntax documented for the installed Tailwind minor version; verify current docs before relying on minor-release-specific syntax.
+Use only `@variant` syntax documented for the installed Tailwind minor version;
+verify current docs before relying on minor-release-specific syntax.
 
 ## Component styles and modules
 
-When using `@apply` or `@variant` in a stylesheet that is bundled separately from the main stylesheet, import definitions for reference without duplicating CSS:
+When using `@apply` or `@variant` in a stylesheet that is bundled separately
+from the main stylesheet, import definitions for reference without duplicating
+CSS:
 
 ```css
 @reference "../../app.css";
@@ -147,7 +159,8 @@ When using `@apply` or `@variant` in a stylesheet that is bundled separately fro
 }
 ```
 
-This is common in Vue, Svelte, Astro, and CSS modules. For simple styles, prefer direct CSS variables over `@apply` to avoid unnecessary processing.
+This is common in Vue, Svelte, Astro, and CSS modules. For simple styles, prefer
+direct CSS variables over `@apply` to avoid unnecessary processing.
 
 ## Dynamic class names
 
@@ -168,12 +181,14 @@ const variants = {
   neutral: "bg-zinc-100 hover:bg-zinc-200 text-zinc-950",
 };
 
-<button className={`${variants[color]} rounded-lg px-4 py-2`}>Save</button>
+<button className={`${variants[color]} rounded-lg px-4 py-2`}>Save</button>;
 ```
 
 ## Legacy compatibility
 
-`@config` can load a JavaScript config file and `@plugin` can load legacy plugins, but use them as migration aids. CSS-defined `@theme`, `@utility`, and variant definitions should be preferred and will take precedence where merged.
+`@config` can load a JavaScript config file and `@plugin` can load legacy
+plugins, but use them as migration aids. CSS-defined `@theme`, `@utility`, and
+variant definitions should be preferred and will take precedence where merged.
 
 ```css
 @import "tailwindcss";

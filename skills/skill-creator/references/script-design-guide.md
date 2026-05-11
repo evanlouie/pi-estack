@@ -4,7 +4,8 @@ Use this before adding or revising files in `scripts/`.
 
 ## When to bundle a script
 
-Bundle a script when repeated logic is easier, safer, or more reliable as code than as instructions. Good candidates:
+Bundle a script when repeated logic is easier, safer, or more reliable as code
+than as instructions. Good candidates:
 
 - Parsing or normalizing structured files
 - Validating plans before execution
@@ -13,7 +14,8 @@ Bundle a script when repeated logic is easier, safer, or more reliable as code t
 - Transforming data with many edge cases
 - Running a fixed command sequence that agents often mistype
 
-Do not bundle a script for a one-line command unless the command is fragile or needs a stable interface.
+Do not bundle a script for a one-line command unless the command is fragile or
+needs a stable interface.
 
 ## Python scripts
 
@@ -43,7 +45,8 @@ uv run scripts/example.py --help
 
 ## TypeScript scripts
 
-Use Deno for TypeScript. Pin package versions in import specifiers, including `npm:` package specifiers.
+Use Deno for TypeScript. Pin package versions in import specifiers, including
+`npm:` package specifiers.
 
 ```ts
 #!/usr/bin/env -S deno run --allow-read
@@ -51,13 +54,17 @@ Use Deno for TypeScript. Pin package versions in import specifiers, including `n
 import * as cheerio from "npm:cheerio@1.0.0";
 ```
 
-No `package.json` or `node_modules` is needed unless the user explicitly wants a package project. Declare required Deno permissions in the shebang or usage examples and prefer the least privileges needed for the script.
+No `package.json` or `node_modules` is needed unless the user explicitly wants a
+package project. Declare required Deno permissions in the shebang or usage
+examples and prefer the least privileges needed for the script.
 
 ## Agent-friendly CLI requirements
 
-Scripts must work in non-interactive shells. They should never wait for prompts, password dialogs, or confirmation menus.
+Scripts must work in non-interactive shells. They should never wait for prompts,
+password dialogs, or confirmation menus.
 
-Use command-line flags, stdin, environment variables, or explicit config files. For missing required input, print a clear error and usage hint.
+Use command-line flags, stdin, environment variables, or explicit config files.
+For missing required input, print a clear error and usage hint.
 
 Good error:
 
@@ -79,10 +86,12 @@ Every reusable script should provide concise help text showing:
 
 ## Output conventions
 
-- Structured data goes to stdout: JSON, CSV, TSV, or a clearly documented format.
+- Structured data goes to stdout: JSON, CSV, TSV, or a clearly documented
+  format.
 - Progress, warnings, and diagnostics go to stderr.
 - Use deterministic output where possible.
-- Limit default output size; add `--limit`, `--offset`, or `--output` for large results.
+- Limit default output size; add `--limit`, `--offset`, or `--output` for large
+  results.
 
 ## Safety and reliability
 
@@ -99,10 +108,11 @@ Prefer:
 
 List scripts and when to run them:
 
-```markdown
+````markdown
 ## Available scripts
 
-- `scripts/validate_mapping.py` — Validate a generated mapping before applying it.
+- `scripts/validate_mapping.py` — Validate a generated mapping before applying
+  it.
 
 ## Workflow
 
@@ -111,8 +121,10 @@ After creating `mapping.json`, run:
 ```bash
 uv run scripts/validate_mapping.py form_fields.json mapping.json
 ```
+````
 
 If validation fails, fix the fields the script names and rerun validation.
-```
 
+```
 Do not assume the agent will discover scripts by browsing the folder. Surface them in the skill body.
+```

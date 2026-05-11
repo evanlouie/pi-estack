@@ -33,13 +33,19 @@
         {
           "type": "button",
           "label": "Approve",
-          "action": { "name": "approve_expense", "parameters": { "expenseId": "exp_2048" } }
+          "action": {
+            "name": "approve_expense",
+            "parameters": { "expenseId": "exp_2048" }
+          }
         },
         {
           "type": "button",
           "label": "Reject",
           "style": "secondary",
-          "action": { "name": "reject_expense", "parameters": { "expenseId": "exp_2048" } }
+          "action": {
+            "name": "reject_expense",
+            "parameters": { "expenseId": "exp_2048" }
+          }
         }
       ]
     }
@@ -86,7 +92,11 @@
         }
       ],
       "actions": [
-        { "type": "button", "label": "Submit ticket", "action": { "name": "submit_ticket" } }
+        {
+          "type": "button",
+          "label": "Submit ticket",
+          "action": { "name": "submit_ticket" }
+        }
       ]
     }
   ]
@@ -140,11 +150,27 @@
       "properties": {
         "title": "Create support ticket",
         "fields": [
-          { "type": "input", "name": "summary", "label": "Summary", "inputType": "text", "required": true },
-          { "type": "input", "name": "details", "label": "Details", "inputType": "textarea", "required": true }
+          {
+            "type": "input",
+            "name": "summary",
+            "label": "Summary",
+            "inputType": "text",
+            "required": true
+          },
+          {
+            "type": "input",
+            "name": "details",
+            "label": "Details",
+            "inputType": "textarea",
+            "required": true
+          }
         ],
         "actions": [
-          { "type": "button", "label": "Submit", "action": { "name": "submit_ticket" } }
+          {
+            "type": "button",
+            "label": "Submit",
+            "action": { "name": "submit_ticket" }
+          }
         ]
       }
     }
@@ -164,11 +190,7 @@
       {
         "type": "list",
         "ordered": true,
-        "items": [
-          "Confirm scope",
-          "Assign owner",
-          "Schedule review"
-        ]
+        "items": ["Confirm scope", "Assign owner", "Schedule review"]
       }
     ]
   }

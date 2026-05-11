@@ -1,6 +1,7 @@
 # web-fetch-markdown
 
-Agent Skill for efficient public web fetching and Markdown conversion using `curl_cffi` and `MarkItDown`.
+Agent Skill for efficient public web fetching and Markdown conversion using
+`curl_cffi` and `MarkItDown`.
 
 ## Install
 
@@ -17,7 +18,8 @@ The script is self-contained for `uv`:
 uv run scripts/fetch_markdown.py --help
 ```
 
-For reproducible dependency resolution in a networked development environment, run:
+For reproducible dependency resolution in a networked development environment,
+run:
 
 ```bash
 uv lock --script scripts/fetch_markdown.py

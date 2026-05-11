@@ -13,25 +13,40 @@ metadata:
 
 # TOON
 
-TOON (Token-Oriented Object Notation) is a compact, line-oriented, indentation-based encoding of the JSON data model for LLM prompts. Use it as a translation layer: keep programmatic data as JSON, encode to TOON for prompt input, and decode or validate TOON before relying on it.
+TOON (Token-Oriented Object Notation) is a compact, line-oriented,
+indentation-based encoding of the JSON data model for LLM prompts. Use it as a
+translation layer: keep programmatic data as JSON, encode to TOON for prompt
+input, and decode or validate TOON before relying on it.
 
 ## Default workflow
 
 1. Decide whether TOON is appropriate.
-   - Prefer TOON for uniform arrays of objects, mixed structured data sent to LLMs, and prompts where explicit `[N]` lengths and `{fields}` improve readability and validation.
-   - Prefer compact JSON for deeply nested or highly non-uniform data when token savings are uncertain.
-   - Prefer CSV for purely flat tables when maximum compactness matters and nesting/type awareness is unnecessary.
-   - Prefer JSON for public APIs, persistent storage, and application-level interchange unless the user specifically requests TOON.
+   - Prefer TOON for uniform arrays of objects, mixed structured data sent to
+     LLMs, and prompts where explicit `[N]` lengths and `{fields}` improve
+     readability and validation.
+   - Prefer compact JSON for deeply nested or highly non-uniform data when token
+     savings are uncertain.
+   - Prefer CSV for purely flat tables when maximum compactness matters and
+     nesting/type awareness is unnecessary.
+   - Prefer JSON for public APIs, persistent storage, and application-level
+     interchange unless the user specifically requests TOON.
 
-2. Use official tooling for conversion, decoding, and validation whenever possible. Do not hand-convert large datasets.
+2. Use official tooling for conversion, decoding, and validation whenever
+   possible. Do not hand-convert large datasets.
 
-3. Validate model-generated TOON before using it. Strict decode catches row-count, field-width, indentation, delimiter, and syntax errors.
+3. Validate model-generated TOON before using it. Strict decode catches
+   row-count, field-width, indentation, delimiter, and syntax errors.
 
-4. For nontrivial syntax questions, validation-error diagnosis, or delimiter/key-folding/path-expansion details, read `references/toon-format-guide.md`.
+4. For nontrivial syntax questions, validation-error diagnosis, or
+   delimiter/key-folding/path-expansion details, read
+   `references/toon-format-guide.md`.
 
 ## Bundled script
 
-Run from the skill root. The examples use `--node-modules-dir=none` to avoid creating a local `node_modules` directory and `--no-lock` to avoid creating or updating a lockfile in the working tree; reproducibility comes from the exact `@toon-format/toon@2.2.0` package pin.
+Run from the skill root. The examples use `--node-modules-dir=none` to avoid
+creating a local `node_modules` directory and `--no-lock` to avoid creating or
+updating a lockfile in the working tree; reproducibility comes from the exact
+`@toon-format/toon@2.2.0` package pin.
 
 ```bash
 deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts encode input.json -o output.toon
@@ -56,7 +71,9 @@ deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/to
 deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/toon.ts decode folded.toon --expandPaths safe -o restored.json
 ```
 
-When Deno is unavailable but Node/npm are available, use the official CLI. The bundled helper's `--stats` reports JSON/TOON byte and character counts, while the official CLI may report its own token-oriented statistics.
+When Deno is unavailable but Node/npm are available, use the official CLI. The
+bundled helper's `--stats` reports JSON/TOON byte and character counts, while
+the official CLI may report its own token-oriented statistics.
 
 ```bash
 npx @toon-format/cli@2.2.0 input.json -o output.toon
@@ -76,7 +93,8 @@ profile:
   active: true
 ```
 
-Use `key: value` for primitive fields and `key:` plus indented children for nested or empty objects. Preserve source key order.
+Use `key: value` for primitive fields and `key:` plus indented children for
+nested or empty objects. Preserve source key order.
 
 ### Primitive arrays
 
@@ -89,7 +107,8 @@ Array headers declare the exact length. Root arrays omit the key: `[3]: a,b,c`.
 
 ### Uniform arrays of objects
 
-Use tabular form when every element is an object, all objects have the same keys, and all row values are primitive:
+Use tabular form when every element is an object, all objects have the same
+keys, and all row values are primitive:
 
 ```toon
 users[2]{id,name,role}:
@@ -97,11 +116,13 @@ users[2]{id,name,role}:
   2,Bob,user
 ```
 
-The row count must equal `[N]`. Every row width must equal the field count in `{...}`.
+The row count must equal `[N]`. Every row width must equal the field count in
+`{...}`.
 
 ### Mixed or nested arrays
 
-Use expanded list form when array elements are non-uniform or contain nested objects/arrays:
+Use expanded list form when array elements are non-uniform or contain nested
+objects/arrays:
 
 ```toon
 items[3]:
@@ -113,9 +134,12 @@ items[3]:
 
 ### Quoting
 
-Quote string values when they are empty, have leading/trailing whitespace, look like a number/boolean/null, contain `:`, `"`, `\`, `[`, `]`, `{`, `}`, a control character, the active delimiter, or start with `-`.
+Quote string values when they are empty, have leading/trailing whitespace, look
+like a number/boolean/null, contain `:`, `"`, `\`, `[`, `]`, `{`, `}`, a control
+character, the active delimiter, or start with `-`.
 
-Escape only these sequences inside quoted strings and keys: `\\`, `\"`, `\n`, `\r`, `\t`.
+Escape only these sequences inside quoted strings and keys: `\\`, `\"`, `\n`,
+`\r`, `\t`.
 
 Unquoted keys and tabular field names should match:
 
@@ -131,14 +155,19 @@ Quote keys that do not match, including hyphenated keys:
 
 ### Numbers, indentation, and whitespace
 
-- Encode numbers in canonical decimal form: no exponent notation, no leading zeros, no trailing fractional zeros, and `-0` becomes `0`.
-- Use two spaces per indentation level unless the user requests another indent size.
-- Never use tabs for indentation. Tabs are allowed only as quoted string content or as the tab delimiter.
-- Avoid comments, trailing spaces, and trailing newline in generated `.toon` files.
+- Encode numbers in canonical decimal form: no exponent notation, no leading
+  zeros, no trailing fractional zeros, and `-0` becomes `0`.
+- Use two spaces per indentation level unless the user requests another indent
+  size.
+- Never use tabs for indentation. Tabs are allowed only as quoted string content
+  or as the tab delimiter.
+- Avoid comments, trailing spaces, and trailing newline in generated `.toon`
+  files.
 
 ## Delimiters
 
-Comma is the default. Tab can reduce token usage for large tabular data and pipe is useful when values often contain commas.
+Comma is the default. Tab can reduce token usage for large tabular data and pipe
+is useful when values often contain commas.
 
 ```toon
 items[2|]{sku|name|qty}:
@@ -146,7 +175,8 @@ items[2|]{sku|name|qty}:
   B2|Gadget|1
 ```
 
-When writing tab-delimited TOON by hand, the header and rows require actual tab characters, not the literal string `\t`; prefer the script or CLI.
+When writing tab-delimited TOON by hand, the header and rows require actual tab
+characters, not the literal string `\t`; prefer the script or CLI.
 
 ## Key folding and path expansion
 
@@ -171,7 +201,8 @@ deno run --no-lock --node-modules-dir=none --allow-read --allow-write scripts/to
 
 ## Prompting with TOON
 
-When embedding TOON in an LLM prompt, wrap it in a fenced code block and rely on the self-describing headers:
+When embedding TOON in an LLM prompt, wrap it in a fenced code block and rely on
+the self-describing headers:
 
 ````markdown
 ```toon
@@ -181,4 +212,6 @@ users[2]{id,name,role}:
 ```
 ````
 
-When asking a model to produce TOON, show the target header and require exact `[N]` counts and row widths. Decode or validate the generated TOON before using it in a pipeline.
+When asking a model to produce TOON, show the target header and require exact
+`[N]` counts and row widths. Decode or validate the generated TOON before using
+it in a pipeline.

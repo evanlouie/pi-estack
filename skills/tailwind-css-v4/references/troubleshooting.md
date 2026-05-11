@@ -22,7 +22,8 @@ Remove `tailwindcss: {}` from PostCSS config.
 
 ## Error: npx tailwindcss init or npx tailwindcss cannot determine executable
 
-Cause: the v4 CLI lives in `@tailwindcss/cli`, and v4 no longer requires `tailwind.config.js` for normal setup.
+Cause: the v4 CLI lives in `@tailwindcss/cli`, and v4 no longer requires
+`tailwind.config.js` for normal setup.
 
 Fix for CLI builds:
 
@@ -39,10 +40,14 @@ Check these in order:
 
 1. The main stylesheet contains `@import "tailwindcss";`.
 2. The CSS file is imported by the app or linked in the document.
-3. Source files contain complete class names, not dynamically concatenated fragments.
-4. Files with class names are not ignored by `.gitignore`, inside `node_modules`, or outside the source detection base.
-5. Add `@source` for external libraries or monorepo paths that Tailwind does not scan.
-6. Safelist known generated classes with `@source inline()` when classes are produced outside source files.
+3. Source files contain complete class names, not dynamically concatenated
+   fragments.
+4. Files with class names are not ignored by `.gitignore`, inside
+   `node_modules`, or outside the source detection base.
+5. Add `@source` for external libraries or monorepo paths that Tailwind does not
+   scan.
+6. Safelist known generated classes with `@source inline()` when classes are
+   produced outside source files.
 
 ## Classes built from props do not work
 
@@ -61,12 +66,13 @@ const statusClass = {
   error: "text-red-600",
 };
 
-<div className={statusClass[status]} />
+<div className={statusClass[status]} />;
 ```
 
 ## Custom theme values do not create utilities
 
-Make sure the value is defined in top-level `@theme`, not nested in a selector or media query.
+Make sure the value is defined in top-level `@theme`, not nested in a selector
+or media query.
 
 ```css
 @theme {
@@ -78,7 +84,8 @@ Use `:root` only for regular CSS variables that should not generate utilities.
 
 ## @apply fails in Vue, Svelte, Astro, or CSS modules
 
-A separately bundled stylesheet cannot see theme variables and custom utilities from the main CSS file. Add `@reference`:
+A separately bundled stylesheet cannot see theme variables and custom utilities
+from the main CSS file. Add `@reference`:
 
 ```css
 @reference "../../app.css";
@@ -98,7 +105,8 @@ Or use CSS variables directly:
 
 ## Dark mode does not toggle manually
 
-By default, `dark:*` follows `prefers-color-scheme`. For manual class toggling, override the variant:
+By default, `dark:*` follows `prefers-color-scheme`. For manual class toggling,
+override the variant:
 
 ```css
 @import "tailwindcss";
@@ -108,7 +116,7 @@ By default, `dark:*` follows `prefers-color-scheme`. For manual class toggling, 
 Then set the class on an ancestor:
 
 ```html
-<html class="dark">
+<html class="dark"></html>
 ```
 
 For data attributes:
@@ -119,7 +127,8 @@ For data attributes:
 
 ## Border or ring colors changed after migration
 
-v4 defaults are less opinionated. Add explicit colors and widths where the old defaults were visually important:
+v4 defaults are less opinionated. Add explicit colors and widths where the old
+defaults were visually important:
 
 ```html
 <div class="border border-gray-200"></div>
@@ -128,4 +137,6 @@ v4 defaults are less opinionated. Add explicit colors and widths where the old d
 
 ## Vite alias imports or plugin resolution issues
 
-Check the installed Tailwind minor/patch version. Several v4.x releases fixed Vite alias and import/plugin resolution behavior. Upgrading within v4.x is often the correct fix after confirming the issue is not caused by project config.
+Check the installed Tailwind minor/patch version. Several v4.x releases fixed
+Vite alias and import/plugin resolution behavior. Upgrading within v4.x is often
+the correct fix after confirming the issue is not caused by project config.

@@ -41,7 +41,9 @@ Usage:
 
 ```html
 <html class="dark" data-theme="ocean">
-  <button class="bg-brand-600 text-white dark:bg-brand-500 theme-ocean:ring-2 theme-ocean:ring-cyan-300">
+  <button
+    class="bg-brand-600 text-white dark:bg-brand-500 theme-ocean:ring-2 theme-ocean:ring-cyan-300"
+  >
     Save
   </button>
 </html>
@@ -68,7 +70,8 @@ Usage:
 </button>
 ```
 
-Because custom utilities participate in Tailwind ordering, ordinary utilities can override parts of the component utility when needed.
+Because custom utilities participate in Tailwind ordering, ordinary utilities
+can override parts of the component utility when needed.
 
 ## Static variant maps for UI components
 
@@ -80,11 +83,7 @@ const buttonTone = {
 };
 
 export function Button({ tone = "primary", children }) {
-  return (
-    <button className={`btn focus:ring-3 ${buttonTone[tone]}`}>
-      {children}
-    </button>
-  );
+  return <button className={`btn focus:ring-3 ${buttonTone[tone]}`}>{children}</button>;
 }
 ```
 

@@ -83,9 +83,7 @@ try {
     Deno.exit(2);
   }
 } catch {
-  console.error(
-    `Error: project-dir does not exist or cannot be read. Received: ${root}`,
-  );
+  console.error(`Error: project-dir does not exist or cannot be read. Received: ${root}`);
   Deno.exit(2);
 }
 
@@ -190,12 +188,7 @@ function asStringMap(value: unknown): Record<string, string> {
 const files = walk(root);
 const findings: Finding[] = [];
 
-function add(
-  severity: Severity,
-  title: string,
-  detail: string,
-  files: string[] = [],
-): void {
+function add(severity: Severity, title: string, detail: string, files: string[] = []): void {
   findings.push({ severity, title, detail, files });
 }
 
@@ -215,11 +208,7 @@ const hasVite =
   files.some((file: string) => /vite\.config\.[cm]?[jt]s$/.test(file));
 
 if (!exists("package.json")) {
-  add(
-    "info",
-    "No package.json found",
-    "The script could not inspect dependencies or scripts.",
-  );
+  add("info", "No package.json found", "The script could not inspect dependencies or scripts.");
 } else if (!hasTailwind) {
   add(
     "warning",
@@ -265,16 +254,13 @@ if (hasVite && !hasVitePlugin) {
 }
 
 const postcssFiles = files.filter(
-  (file: string) =>
-    /postcss\.config\.[cm]?[jt]s$/.test(file) ||
-    /\.postcssrc/.test(basename(file)),
+  (file: string) => /postcss\.config\.[cm]?[jt]s$/.test(file) || /\.postcssrc/.test(basename(file)),
 );
 
 for (const file of postcssFiles) {
   const body = Deno.readTextFileSync(file);
   const usesDirectTailwindPostcss =
-    /(?:^|[\s{[,])tailwindcss\s*[:(,\]}]/m.test(body) ||
-    /["']tailwindcss["']/.test(body);
+    /(?:^|[\s{[,])tailwindcss\s*[:(,\]}]/m.test(body) || /["']tailwindcss["']/.test(body);
 
   if (usesDirectTailwindPostcss && !body.includes("@tailwindcss/postcss")) {
     add(
@@ -294,18 +280,13 @@ for (const file of postcssFiles) {
   }
 }
 
-const viteFiles = files.filter((file: string) =>
-  /vite\.config\.[cm]?[jt]s$/.test(file),
-);
+const viteFiles = files.filter((file: string) => /vite\.config\.[cm]?[jt]s$/.test(file));
 for (const file of viteFiles) {
   const body = Deno.readTextFileSync(file);
   if (body.includes("@tailwindcss/vite") && !hasVitePlugin) {
-    add(
-      "warning",
-      "Vite plugin referenced but dependency missing",
-      "Install @tailwindcss/vite.",
-      [rel(file)],
-    );
+    add("warning", "Vite plugin referenced but dependency missing", "Install @tailwindcss/vite.", [
+      rel(file),
+    ]);
   }
 }
 
@@ -326,9 +307,7 @@ for (const [name, command] of Object.entries(scripts)) {
   }
 }
 
-const tailwindConfigs = files.filter((file: string) =>
-  /tailwind\.config\.[cm]?[jt]s$/.test(file),
-);
+const tailwindConfigs = files.filter((file: string) => /tailwind\.config\.[cm]?[jt]s$/.test(file));
 for (const file of tailwindConfigs) {
   const body = Deno.readTextFileSync(file);
   const unsupported: string[] = [];
@@ -341,9 +320,7 @@ for (const file of tailwindConfigs) {
     add(
       "warning",
       "JavaScript Tailwind config contains v3-style options",
-      `Review these options for v4 CSS-first migration: ${unsupported.join(
-        ", ",
-      )}.`,
+      `Review these options for v4 CSS-first migration: ${unsupported.join(", ")}.`,
       [rel(file)],
     );
   } else {
@@ -356,9 +333,7 @@ for (const file of tailwindConfigs) {
   }
 }
 
-const cssFiles = files.filter((file: string) =>
-  /\.(css|pcss|postcss)$/.test(file),
-);
+const cssFiles = files.filter((file: string) => /\.(css|pcss|postcss)$/.test(file));
 let hasImportTailwind = false;
 
 for (const file of cssFiles) {
@@ -374,11 +349,7 @@ for (const file of cssFiles) {
     );
   }
 
-  if (
-    /@apply\b/.test(body) &&
-    file.endsWith(".module.css") &&
-    !/@reference\b/.test(body)
-  ) {
+  if (/@apply\b/.test(body) && file.endsWith(".module.css") && !/@reference\b/.test(body)) {
     add(
       "warning",
       "@apply may need @reference",
@@ -388,9 +359,7 @@ for (const file of cssFiles) {
   }
 }
 
-const componentStyleFiles = files.filter((file: string) =>
-  /\.(vue|svelte|astro)$/.test(file),
-);
+const componentStyleFiles = files.filter((file: string) => /\.(vue|svelte|astro)$/.test(file));
 for (const file of componentStyleFiles) {
   const body = Deno.readTextFileSync(file);
   if (/@apply\b/.test(body) && !/@reference\b/.test(body)) {

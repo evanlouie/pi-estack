@@ -1,6 +1,7 @@
 # CSS-first configuration reference for Tailwind v4 migrations
 
-Tailwind v4 moves the recommended configuration model from JavaScript to CSS. Use this reference when converting `tailwind.config.*`.
+Tailwind v4 moves the recommended configuration model from JavaScript to CSS.
+Use this reference when converting `tailwind.config.*`.
 
 ## Core v4 directives
 
@@ -25,7 +26,8 @@ Tailwind v4 moves the recommended configuration model from JavaScript to CSS. Us
 
 ## `@theme` vs `:root`
 
-Use `@theme` when a design token should create Tailwind utilities or variants. Use `:root` for ordinary CSS variables that should not create utility classes.
+Use `@theme` when a design token should create Tailwind utilities or variants.
+Use `:root` for ordinary CSS variables that should not create utility classes.
 
 ```css
 @theme {
@@ -37,35 +39,36 @@ Use `@theme` when a design token should create Tailwind utilities or variants. U
 }
 ```
 
-`@theme` variables must be top-level, not nested under selectors or media queries.
+`@theme` variables must be top-level, not nested under selectors or media
+queries.
 
 ## Common `tailwind.config.*` mappings
 
-| v3 config area | v4 CSS-first equivalent | Notes |
-|---|---|---|
-| `theme.extend.colors.brand.500` | `@theme { --color-brand-500: ...; }` | Enables `bg-brand-500`, `text-brand-500`, `border-brand-500`, etc. |
-| `theme.extend.fontFamily.display` | `@theme { --font-display: ...; }` | Enables `font-display`. |
-| `theme.extend.fontSize.xxl` | `@theme { --text-xxl: ...; }` | Use text namespace for font-size utilities. Add related variables for line-height if needed. |
-| `theme.extend.fontWeight.book` | `@theme { --font-weight-book: 350; }` | Enables `font-book`. |
-| `theme.extend.letterSpacing.tightish` | `@theme { --tracking-tightish: ...; }` | Enables `tracking-tightish`. |
-| `theme.extend.lineHeight.11` | `@theme { --leading-11: ...; }` | Enables `leading-11`. |
-| `theme.extend.screens.3xl` | `@theme { --breakpoint-3xl: 120rem; }` | Enables `3xl:*`. |
-| `theme.container.center/padding` | `@utility container { ... }` | v3 container options do not map directly. |
-| `theme.extend.spacing` | Usually no config, or `--spacing-*`/custom values | Many arbitrary spacing values work without config in v4. Keep true design tokens in `@theme`. |
-| `theme.extend.borderRadius.card` | `@theme { --radius-card: ...; }` | Enables `rounded-card`. |
-| `theme.extend.boxShadow.card` | `@theme { --shadow-card: ...; }` | Enables `shadow-card`. |
-| `theme.extend.dropShadow.glow` | `@theme { --drop-shadow-glow: ...; }` | Enables `drop-shadow-glow`. |
-| `theme.extend.blur.soft` | `@theme { --blur-soft: ...; }` | Enables `blur-soft`. |
-| `theme.extend.transitionTimingFunction.snappy` | `@theme { --ease-snappy: ...; }` | Enables `ease-snappy`. |
-| `theme.extend.animation.fade-in` | `@theme { --animate-fade-in: fade-in ...; @keyframes fade-in { ... } }` | Keyframes can live inside `@theme`. |
-| `content` | Automatic detection; optional `source()`/`@source` | Do not copy v3 content arrays unless needed. |
-| `safelist` | `@source inline()` or static class maps | JS config safelist is unsupported in v4. |
-| `plugins: [require(...)]` | `@plugin "package";` or plugin-specific v4 setup | Verify plugin compatibility. |
-| `prefix: "tw-"` | `@import "tailwindcss" prefix(tw);` | Classes become `tw:flex`, not `tw-flex`. |
-| `darkMode: ['class', ...]` or custom selector | `@custom-variant dark (...)` as needed | Built-in behavior may be enough for simple cases. |
-| `corePlugins` | No direct support | Redesign or remove unsupported dependency on disabled core utilities. |
-| `separator` | No direct support | v4 class syntax assumes variant-like separators. |
-| `presets` | Import shared CSS token files, or use `@config` temporarily | Prefer shared CSS theme packages over JS presets. |
+| v3 config area                                 | v4 CSS-first equivalent                                                 | Notes                                                                                         |
+| ---------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `theme.extend.colors.brand.500`                | `@theme { --color-brand-500: ...; }`                                    | Enables `bg-brand-500`, `text-brand-500`, `border-brand-500`, etc.                            |
+| `theme.extend.fontFamily.display`              | `@theme { --font-display: ...; }`                                       | Enables `font-display`.                                                                       |
+| `theme.extend.fontSize.xxl`                    | `@theme { --text-xxl: ...; }`                                           | Use text namespace for font-size utilities. Add related variables for line-height if needed.  |
+| `theme.extend.fontWeight.book`                 | `@theme { --font-weight-book: 350; }`                                   | Enables `font-book`.                                                                          |
+| `theme.extend.letterSpacing.tightish`          | `@theme { --tracking-tightish: ...; }`                                  | Enables `tracking-tightish`.                                                                  |
+| `theme.extend.lineHeight.11`                   | `@theme { --leading-11: ...; }`                                         | Enables `leading-11`.                                                                         |
+| `theme.extend.screens.3xl`                     | `@theme { --breakpoint-3xl: 120rem; }`                                  | Enables `3xl:*`.                                                                              |
+| `theme.container.center/padding`               | `@utility container { ... }`                                            | v3 container options do not map directly.                                                     |
+| `theme.extend.spacing`                         | Usually no config, or `--spacing-*`/custom values                       | Many arbitrary spacing values work without config in v4. Keep true design tokens in `@theme`. |
+| `theme.extend.borderRadius.card`               | `@theme { --radius-card: ...; }`                                        | Enables `rounded-card`.                                                                       |
+| `theme.extend.boxShadow.card`                  | `@theme { --shadow-card: ...; }`                                        | Enables `shadow-card`.                                                                        |
+| `theme.extend.dropShadow.glow`                 | `@theme { --drop-shadow-glow: ...; }`                                   | Enables `drop-shadow-glow`.                                                                   |
+| `theme.extend.blur.soft`                       | `@theme { --blur-soft: ...; }`                                          | Enables `blur-soft`.                                                                          |
+| `theme.extend.transitionTimingFunction.snappy` | `@theme { --ease-snappy: ...; }`                                        | Enables `ease-snappy`.                                                                        |
+| `theme.extend.animation.fade-in`               | `@theme { --animate-fade-in: fade-in ...; @keyframes fade-in { ... } }` | Keyframes can live inside `@theme`.                                                           |
+| `content`                                      | Automatic detection; optional `source()`/`@source`                      | Do not copy v3 content arrays unless needed.                                                  |
+| `safelist`                                     | `@source inline()` or static class maps                                 | JS config safelist is unsupported in v4.                                                      |
+| `plugins: [require(...)]`                      | `@plugin "package";` or plugin-specific v4 setup                        | Verify plugin compatibility.                                                                  |
+| `prefix: "tw-"`                                | `@import "tailwindcss" prefix(tw);`                                     | Classes become `tw:flex`, not `tw-flex`.                                                      |
+| `darkMode: ['class', ...]` or custom selector  | `@custom-variant dark (...)` as needed                                  | Built-in behavior may be enough for simple cases.                                             |
+| `corePlugins`                                  | No direct support                                                       | Redesign or remove unsupported dependency on disabled core utilities.                         |
+| `separator`                                    | No direct support                                                       | v4 class syntax assumes variant-like separators.                                              |
+| `presets`                                      | Import shared CSS token files, or use `@config` temporarily             | Prefer shared CSS theme packages over JS presets.                                             |
 
 ## Theme namespace examples
 
@@ -95,8 +98,12 @@ Use `@theme` when a design token should create Tailwind utilities or variants. U
   --animate-fade-in: fade-in 200ms ease-out;
 
   @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }
 ```
@@ -137,7 +144,8 @@ Add new variables:
 }
 ```
 
-Only use namespace resets when the project intentionally removes default utilities such as `bg-red-500`.
+Only use namespace resets when the project intentionally removes default
+utilities such as `bg-red-500`.
 
 ### Custom-only theme
 
@@ -156,7 +164,8 @@ This removes default token-driven utilities. Use carefully.
 
 ## Referencing other variables
 
-When a theme variable depends on another CSS variable, consider `@theme inline` so generated utilities use the referenced value directly:
+When a theme variable depends on another CSS variable, consider `@theme inline`
+so generated utilities use the referenced value directly:
 
 ```css
 @theme inline {
@@ -166,7 +175,8 @@ When a theme variable depends on another CSS variable, consider `@theme inline` 
 
 ## Generating all CSS variables
 
-By default, only used CSS variables may be generated. Use `@theme static` when all variables must exist in output CSS:
+By default, only used CSS variables may be generated. Use `@theme static` when
+all variables must exist in output CSS:
 
 ```css
 @theme static {
@@ -187,9 +197,11 @@ Use `@utility` for custom classes that should work with variants:
 }
 ```
 
-Then `hover:btn`, `lg:btn`, or other variants can be generated when supported by Tailwind’s utility system.
+Then `hover:btn`, `lg:btn`, or other variants can be generated when supported by
+Tailwind’s utility system.
 
-Use ordinary CSS under `@layer components` or `@layer base` when you only need cascade layering, not utility behavior.
+Use ordinary CSS under `@layer components` or `@layer base` when you only need
+cascade layering, not utility behavior.
 
 ## Custom variants
 
@@ -208,7 +220,9 @@ Then use:
 
 ## Source detection and safelisting
 
-Tailwind v4 scans project files automatically, but it ignores common generated/third-party locations such as `node_modules`, files in `.gitignore`, binary files, CSS files, and lockfiles.
+Tailwind v4 scans project files automatically, but it ignores common
+generated/third-party locations such as `node_modules`, files in `.gitignore`,
+binary files, CSS files, and lockfiles.
 
 ### Register external sources
 
@@ -262,7 +276,9 @@ Use these only for incremental migration.
 @plugin "@tailwindcss/typography";
 ```
 
-CSS-defined `@theme`, `@utility`, and variants can coexist with bridged JS config/plugin values. CSS definitions should be treated as the source of truth when conflicts occur.
+CSS-defined `@theme`, `@utility`, and variants can coexist with bridged JS
+config/plugin values. CSS definitions should be treated as the source of truth
+when conflicts occur.
 
 ## Converting a realistic v3 config
 

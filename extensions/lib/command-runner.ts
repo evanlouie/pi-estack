@@ -212,11 +212,7 @@ export function appendMessage(content: ToolResultContent, message: string): Tool
   };
 }
 
-export function notify(
-  ctx: ExtensionContext,
-  message: string,
-  level: NotificationLevel,
-): void {
+export function notify(ctx: ExtensionContext, message: string, level: NotificationLevel): void {
   match(ctx)
     .with({ hasUI: true }, ({ ui }) => ui.notify(message, level))
     .otherwise(() => undefined);

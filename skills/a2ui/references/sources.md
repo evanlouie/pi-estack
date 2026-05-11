@@ -1,6 +1,8 @@
 # Source links
 
-This skill was authored against A2UI and Agent Skills documentation available in May 2026. Check the latest official sources when exact current schema fidelity matters.
+This skill was authored against A2UI and Agent Skills documentation available in
+May 2026. Check the latest official sources when exact current schema fidelity
+matters.
 
 ## Agent Skills
 
@@ -8,7 +10,8 @@ This skill was authored against A2UI and Agent Skills documentation available in
 - Agent Skills overview: https://agentskills.io/home
 - Agent Skills specification: https://agentskills.io/specification
 - Best practices: https://agentskills.io/skill-creation/best-practices
-- Optimizing descriptions: https://agentskills.io/skill-creation/optimizing-descriptions
+- Optimizing descriptions:
+  https://agentskills.io/skill-creation/optimizing-descriptions
 - Evaluating skills: https://agentskills.io/skill-creation/evaluating-skills
 - Using scripts in skills: https://agentskills.io/skill-creation/using-scripts
 
